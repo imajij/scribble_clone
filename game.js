@@ -1,0 +1,224 @@
+const { getRandomWords } = require('./words');
+
+class Game {
+  constructor(roomId) {
+    this.roomId = roomId;
+    this.players = new Map();       // socketId -> { name, score, avatar }
+    this.state = 'waiting';         // waiting | choosing | drawing | roundEnd | gameOver
+    this.currentDrawer = null;      // socketId
+    this.currentWord = null;
+    this.wordChoices = [];
+    this.roundNum = 0;
+    this.maxRounds = 3;
+    this.turnOrder = [];
+    this.turnIndex = 0;
+    this.hints = [];
+    this.guessedPlayers = new Set();
+    this.turnTimer = null;
+    this.chooseTimer = null;
+    this.turnDuration = 80;         // seconds
+    this.chooseDuration = 15;       // seconds
+    this.turnStartTime = null;
+    this.drawingData = [];
+    this.chatHistory = [];
+  }
+
+  addPlayer(socketId, name) {
+    const avatarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+      '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+      '#F0B27A', '#82E0AA', '#F1948A', '#AED6F1', '#D7BDE2'];
+    const color = avatarColors[this.players.size % avatarColors.length];
+
+    this.players.set(socketId, {
+      name,
+      score: 0,
+      avatar: color,
+      isDrawing: false
+    });
+    return this.players.get(socketId);
+  }
+
+  removePlayer(socketId) {
+    this.players.delete(socketId);
+    this.guessedPlayers.delete(socketId);
+    this.turnOrder = this.turnOrder.filter(id => id !== socketId);
+  }
+
+  getPlayerList() {
+    const list = [];
+    this.players.forEach((player, id) => {
+      list.push({ id, ...player });
+    });
+    return list.sort((a, b) => b.score - a.score);
+  }
+
+  canStart() {
+    return this.players.size >= 2 && this.state === 'waiting';
+  }
+
+  startGame() {
+    this.roundNum = 0;
+    this.turnOrder = [...this.players.keys()];
+    this.shuffleTurnOrder();
+    this.turnIndex = -1;
+    this.players.forEach(p => { p.score = 0; p.isDrawing = false; });
+    this.nextTurn();
+  }
+
+  shuffleTurnOrder() {
+    for (let i = this.turnOrder.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [this.turnOrder[i], this.turnOrder[j]] = [this.turnOrder[j], this.turnOrder[i]];
+    }
+  }
+
+  nextTurn() {
+    // Clear timers
+    this.clearTimers();
+
+    // Reset drawing state
+    this.drawingData = [];
+    this.guessedPlayers.clear();
+    this.currentWord = null;
+    this.hints = [];
+
+    // Reset isDrawing for all
+    this.players.forEach(p => { p.isDrawing = false; });
+
+    // Advance turn
+    this.turnIndex++;
+
+    // Check if round complete
+    if (this.turnIndex >= this.turnOrder.length) {
+      this.turnIndex = 0;
+      this.roundNum++;
+
+      if (this.roundNum >= this.maxRounds) {
+        this.state = 'gameOver';
+        return { event: 'gameOver', scores: this.getPlayerList() };
+      }
+    }
+
+    // Set current drawer
+    this.currentDrawer = this.turnOrder[this.turnIndex];
+    if (!this.players.has(this.currentDrawer)) {
+      // Player left, skip
+      return this.nextTurn();
+    }
+
+    this.players.get(this.currentDrawer).isDrawing = true;
+    this.state = 'choosing';
+    this.wordChoices = getRandomWords(3);
+
+    return {
+      event: 'choosing',
+      drawer: this.currentDrawer,
+      drawerName: this.players.get(this.currentDrawer).name,
+      choices: this.wordChoices,
+      roundNum: this.roundNum + 1,
+      maxRounds: this.maxRounds
+    };
+  }
+
+  selectWord(word) {
+    this.currentWord = word;
+    this.state = 'drawing';
+    this.turnStartTime = Date.now();
+    this.hints = this.generateHints(word);
+
+    return {
+      event: 'turnStart',
+      drawer: this.currentDrawer,
+      drawerName: this.players.get(this.currentDrawer).name,
+      wordLength: word.length,
+      hint: this.getBlankHint(word),
+      duration: this.turnDuration
+    };
+  }
+
+  generateHints(word) {
+    const letters = [];
+    for (let i = 0; i < word.length; i++) {
+      if (word[i] !== ' ') letters.push(i);
+    }
+    // Shuffle and pick some to reveal
+    letters.sort(() => Math.random() - 0.5);
+    const reveals = letters.slice(0, Math.max(1, Math.floor(letters.length * 0.4)));
+    return reveals;
+  }
+
+  getBlankHint(word) {
+    return word.split('').map(c => c === ' ' ? '  ' : '_').join(' ');
+  }
+
+  getPartialHint(revealCount) {
+    const word = this.currentWord;
+    const toReveal = this.hints.slice(0, revealCount);
+    return word.split('').map((c, i) => {
+      if (c === ' ') return '  ';
+      if (toReveal.includes(i)) return c;
+      return '_';
+    }).join(' ');
+  }
+
+  checkGuess(socketId, guess) {
+    if (this.state !== 'drawing') return null;
+    if (socketId === this.currentDrawer) return null;
+    if (this.guessedPlayers.has(socketId)) return null;
+
+    const normalizedGuess = guess.trim().toLowerCase();
+    const normalizedWord = this.currentWord.toLowerCase();
+
+    if (normalizedGuess === normalizedWord) {
+      this.guessedPlayers.add(socketId);
+
+      // Calculate score based on time
+      const elapsed = (Date.now() - this.turnStartTime) / 1000;
+      const timeRatio = Math.max(0, 1 - elapsed / this.turnDuration);
+      const guessScore = Math.round(100 + 400 * timeRatio);
+      const drawerBonus = Math.round(50 + 100 * timeRatio);
+
+      const player = this.players.get(socketId);
+      if (player) player.score += guessScore;
+
+      const drawer = this.players.get(this.currentDrawer);
+      if (drawer) drawer.score += drawerBonus;
+
+      // Check if everyone guessed
+      const activePlayers = [...this.players.keys()].filter(id => id !== this.currentDrawer);
+      const allGuessed = activePlayers.every(id => this.guessedPlayers.has(id));
+
+      return {
+        correct: true,
+        playerName: player ? player.name : 'Unknown',
+        score: guessScore,
+        allGuessed
+      };
+    }
+
+    // Check for close guess (within 1-2 chars)
+    if (this.isCloseGuess(normalizedGuess, normalizedWord)) {
+      return { correct: false, close: true };
+    }
+
+    return { correct: false, close: false };
+  }
+
+  isCloseGuess(guess, word) {
+    if (Math.abs(guess.length - word.length) > 2) return false;
+    let diff = 0;
+    const maxLen = Math.max(guess.length, word.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (guess[i] !== word[i]) diff++;
+      if (diff > 2) return false;
+    }
+    return diff > 0 && diff <= 2;
+  }
+
+  clearTimers() {
+    if (this.turnTimer) { clearTimeout(this.turnTimer); this.turnTimer = null; }
+    if (this.chooseTimer) { clearTimeout(this.chooseTimer); this.chooseTimer = null; }
+  }
+}
+
+module.exports = Game;
