@@ -9,6 +9,8 @@ let currentRoom = null;
 let selectedRounds = 3;
 let timerInterval = null;
 let isDrawer = false;
+let isOwner = false;
+let roomOwner = null;
 
 // ========================================
 // DOM ELEMENTS
@@ -24,6 +26,8 @@ const createRoomBtn = document.getElementById('createRoomBtn');
 const joinRoomBtn = document.getElementById('joinRoomBtn');
 const roomCodeInput = document.getElementById('roomCodeInput');
 const roundBtns = document.querySelectorAll('.round-btn');
+const activeRoomsDiv = document.getElementById('activeRooms');
+const roomListContainer = document.getElementById('roomListContainer');
 
 const waitingScreen = document.getElementById('waitingScreen');
 const roomCodeDisplay = document.getElementById('roomCodeDisplay');
@@ -142,22 +146,44 @@ startGameBtn.addEventListener('click', () => {
 });
 
 function updateWaitingPlayers(players) {
+  // Allow calling without args to just refresh from DOM
+  if (players) {
+    updateWaitingPlayers._lastPlayers = players;
+  } else {
+    players = updateWaitingPlayers._lastPlayers || [];
+  }
+
   waitingPlayers.innerHTML = '';
   players.forEach(p => {
     const card = document.createElement('div');
     card.className = 'player-card';
+    const ownerBadge = (p.id === roomOwner) ? '<span class="owner-badge">👑</span>' : '';
     card.innerHTML = `
       <div class="player-avatar" style="background:${p.avatar}">${p.name[0].toUpperCase()}</div>
-      <span>${escapeHtml(p.name)}</span>
+      <span>${escapeHtml(p.name)} ${ownerBadge}</span>
     `;
     waitingPlayers.appendChild(card);
   });
 
   playerCount.textContent = players.length;
-  startGameBtn.disabled = players.length < 2;
-  startGameBtn.textContent = players.length < 2
-    ? 'Need 2+ players to start'
-    : '🎨 Start Game!';
+  updateStartButton(players.length);
+}
+
+function updateStartButton(count) {
+  if (count === undefined) {
+    const players = updateWaitingPlayers._lastPlayers || [];
+    count = players.length;
+  }
+
+  if (isOwner) {
+    startGameBtn.disabled = count < 2;
+    startGameBtn.textContent = count < 2 ? 'Need 2+ players to start' : '🎨 Start Game!';
+    startGameBtn.style.display = '';
+  } else {
+    startGameBtn.textContent = 'Waiting for host to start...';
+    startGameBtn.disabled = true;
+    startGameBtn.style.display = '';
+  }
 }
 
 // ========================================
@@ -168,23 +194,111 @@ socket.on('connect', () => {
   myId = socket.id;
 });
 
-socket.on('joinedRoom', ({ roomId, players, state }) => {
+socket.on('roomList', (rooms) => {
+  renderRoomList(rooms);
+});
+
+function renderRoomList(rooms) {
+  if (!rooms || rooms.length === 0) {
+    activeRoomsDiv.classList.add('hidden');
+    return;
+  }
+  activeRoomsDiv.classList.remove('hidden');
+  roomListContainer.innerHTML = '';
+  rooms.forEach(room => {
+    const stateLabel = room.state === 'waiting' ? 'Waiting' : 'Playing';
+    const stateClass = room.state === 'waiting' ? 'waiting' : 'playing';
+    const item = document.createElement('div');
+    item.className = 'room-list-item';
+    item.innerHTML = `
+      <div class="room-info">
+        <div class="room-id">${room.id}</div>
+        <div class="room-meta">${room.players}/8 players &middot; <span class="room-state-badge ${stateClass}">${stateLabel}</span></div>
+      </div>
+      <button class="btn btn-secondary room-join-btn" data-room="${room.id}">Join</button>
+    `;
+    roomListContainer.appendChild(item);
+  });
+
+  // Attach join handlers
+  roomListContainer.querySelectorAll('.room-join-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = playerNameInput.value.trim();
+      if (!name) {
+        playerNameInput.style.borderColor = '#ef4444';
+        playerNameInput.focus();
+        return;
+      }
+      socket.emit('joinRoom', { roomId: btn.dataset.room, playerName: name });
+    });
+  });
+}
+
+socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerId, gameState }) => {
   currentRoom = roomId;
+  isOwner = owner;
+  roomOwner = ownerId;
   lobbyScreen.classList.add('hidden');
-  waitingScreen.classList.remove('hidden');
-  roomCodeDisplay.textContent = roomId;
-  updateWaitingPlayers(players);
+
+  if (state === 'waiting') {
+    // Normal waiting room
+    waitingScreen.classList.remove('hidden');
+    roomCodeDisplay.textContent = roomId;
+    updateWaitingPlayers(players);
+    updateStartButton(players.length);
+  } else if (gameState) {
+    // Joining an ongoing game — go straight to game screen
+    showGameScreen();
+    roundDisplay.textContent = gameState.roundNum;
+    maxRoundDisplay.textContent = gameState.maxRounds;
+    isDrawer = false;
+    drawingCanvas.disable();
+    drawingCanvas.clear();
+    hideOverlays();
+    drawTools.classList.add('hidden');
+
+    if (gameState.isChoosing) {
+      wordHint.textContent = `${gameState.drawerName} is choosing a word...`;
+      showDrawingInfo(`${gameState.drawerName} is choosing a word...`);
+    } else {
+      wordHint.textContent = gameState.hint;
+      chatInput.disabled = false;
+      chatInput.placeholder = 'Type your guess...';
+      chatInput.focus();
+      if (gameState.remainingTime > 0) {
+        startTimer(gameState.remainingTime);
+      }
+      // Replay drawing data
+      if (gameState.drawingData && gameState.drawingData.length > 0) {
+        gameState.drawingData.forEach(data => {
+          drawingCanvas.remoteDrawing(data);
+        });
+      }
+    }
+
+    updatePlayerList(players);
+    addSystemMessage('You joined an ongoing game — spectate this round!');
+  }
 });
 
 socket.on('playerJoined', ({ playerName, players }) => {
   updateWaitingPlayers(players);
+  updateStartButton(players.length);
   addSystemMessage(`${playerName} joined the room! 🎉`);
 });
 
 socket.on('playerLeft', ({ playerName, players }) => {
   updateWaitingPlayers(players);
   updatePlayerList(players);
+  updateStartButton(players.length);
   addSystemMessage(`${playerName} left the room 👋`);
+});
+
+socket.on('ownerUpdate', ({ owner: ownerId }) => {
+  roomOwner = ownerId;
+  isOwner = (ownerId === myId);
+  updateStartButton();
+  updateWaitingPlayers(); // re-render badges
 });
 
 socket.on('playerList', (players) => {
@@ -357,6 +471,7 @@ socket.on('gameReset', ({ message }) => {
   drawingCanvas.clear();
   wordHint.textContent = 'Waiting for players...';
   drawTools.classList.add('hidden');
+  updateStartButton();
 });
 
 playAgainBtn.addEventListener('click', () => {
@@ -364,6 +479,7 @@ playAgainBtn.addEventListener('click', () => {
   // Go back to waiting screen
   gameScreen.classList.add('hidden');
   waitingScreen.classList.remove('hidden');
+  updateStartButton();
 });
 
 // ========================================

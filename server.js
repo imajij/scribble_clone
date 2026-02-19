@@ -24,12 +24,14 @@ function getOrCreateRoom(roomId) {
 function getRoomList() {
   const list = [];
   rooms.forEach((game, id) => {
-    list.push({
-      id,
-      players: game.players.size,
-      state: game.state,
-      maxPlayers: 8
-    });
+    if (game.players.size > 0) {
+      list.push({
+        id,
+        players: game.players.size,
+        state: game.state,
+        maxPlayers: 8
+      });
+    }
   });
   return list;
 }
@@ -59,10 +61,6 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Room is full!' });
       return;
     }
-    if (game.state !== 'waiting') {
-      socket.emit('error', { message: 'Game already in progress!' });
-      return;
-    }
     joinRoom(socket, roomId, playerName);
   });
 
@@ -73,9 +71,15 @@ io.on('connection', (socket) => {
     const game = rooms.get(roomId);
     if (!game || !game.canStart()) return;
 
-    // Only host (first player in turn order) can start
+    // Only room owner can start the game
+    if (!game.isOwner(socket.id)) {
+      socket.emit('error', { message: 'Only the room owner can start the game!' });
+      return;
+    }
+
     const result = game.startGame();
     handleTurnEvent(roomId, game, result);
+    io.emit('roomList', getRoomList());
   });
 
   // Word chosen by drawer
@@ -192,6 +196,7 @@ io.on('connection', (socket) => {
 
     const player = game.players.get(socket.id);
     const wasDrawer = game.currentDrawer === socket.id;
+    const wasOwner = game.isOwner(socket.id);
 
     game.removePlayer(socket.id);
     playerRooms.delete(socket.id);
@@ -207,6 +212,15 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Notify about new owner if ownership transferred
+    if (wasOwner && game.owner) {
+      io.to(roomId).emit('ownerUpdate', { owner: game.owner });
+      const newOwnerPlayer = game.players.get(game.owner);
+      io.to(roomId).emit('systemMessage', {
+        message: `${newOwnerPlayer ? newOwnerPlayer.name : 'Someone'} is now the room owner`
+      });
+    }
+
     if (game.players.size < 2 && game.state !== 'waiting') {
       game.clearTimers();
       game.state = 'waiting';
@@ -214,12 +228,15 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (wasDrawer && game.state === 'drawing') {
+    if (wasDrawer && (game.state === 'drawing' || game.state === 'choosing')) {
       endTurn(roomId, game, false);
     }
 
     io.to(roomId).emit('playerList', game.getPlayerList());
     console.log(`Player disconnected: ${socket.id}`);
+
+    // Broadcast updated room list to lobby
+    io.emit('roomList', getRoomList());
   });
 });
 
@@ -229,18 +246,45 @@ function joinRoom(socket, roomId, playerName) {
   playerRooms.set(socket.id, roomId);
 
   socket.join(roomId);
-  socket.emit('joinedRoom', {
+
+  // Build the joined payload
+  const joinPayload = {
     roomId,
     players: game.getPlayerList(),
-    state: game.state
-  });
+    state: game.state,
+    isOwner: game.isOwner(socket.id),
+    owner: game.owner
+  };
+
+  // If game is in progress, send current game state so late-joiner can spectate
+  if (game.state === 'drawing' || game.state === 'choosing') {
+    const drawerPlayer = game.players.get(game.currentDrawer);
+    joinPayload.gameState = {
+      drawer: game.currentDrawer,
+      drawerName: drawerPlayer ? drawerPlayer.name : 'Unknown',
+      hint: game.getCurrentHint(),
+      wordLength: game.currentWord ? game.currentWord.length : 0,
+      remainingTime: game.getRemainingTime(),
+      roundNum: game.roundNum + 1,
+      maxRounds: game.maxRounds,
+      drawingData: game.drawingData,
+      isChoosing: game.state === 'choosing'
+    };
+  }
+
+  socket.emit('joinedRoom', joinPayload);
 
   socket.to(roomId).emit('playerJoined', {
     playerName,
     players: game.getPlayerList()
   });
 
+  // Notify all about ownership
+  io.to(roomId).emit('ownerUpdate', { owner: game.owner });
   io.to(roomId).emit('playerList', game.getPlayerList());
+
+  // Broadcast updated room list to lobby
+  io.emit('roomList', getRoomList());
 }
 
 function handleTurnEvent(roomId, game, result) {
@@ -249,6 +293,7 @@ function handleTurnEvent(roomId, game, result) {
   if (result.event === 'gameOver') {
     io.to(roomId).emit('gameOver', { scores: result.scores });
     game.state = 'waiting';
+    io.emit('roomList', getRoomList());
     return;
   }
 

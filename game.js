@@ -5,6 +5,7 @@ class Game {
     this.roomId = roomId;
     this.players = new Map();       // socketId -> { name, score, avatar }
     this.state = 'waiting';         // waiting | choosing | drawing | roundEnd | gameOver
+    this.owner = null;              // socketId of room creator
     this.currentDrawer = null;      // socketId
     this.currentWord = null;
     this.wordChoices = [];
@@ -29,6 +30,11 @@ class Game {
       '#F0B27A', '#82E0AA', '#F1948A', '#AED6F1', '#D7BDE2'];
     const color = avatarColors[this.players.size % avatarColors.length];
 
+    // First player becomes the owner
+    if (!this.owner || !this.players.has(this.owner)) {
+      this.owner = socketId;
+    }
+
     this.players.set(socketId, {
       name,
       score: 0,
@@ -42,6 +48,33 @@ class Game {
     this.players.delete(socketId);
     this.guessedPlayers.delete(socketId);
     this.turnOrder = this.turnOrder.filter(id => id !== socketId);
+
+    // Transfer ownership if owner left
+    if (this.owner === socketId) {
+      const remaining = [...this.players.keys()];
+      this.owner = remaining.length > 0 ? remaining[0] : null;
+    }
+  }
+
+  isOwner(socketId) {
+    return this.owner === socketId;
+  }
+
+  getRemainingTime() {
+    if (!this.turnStartTime || this.state !== 'drawing') return 0;
+    const elapsed = (Date.now() - this.turnStartTime) / 1000;
+    return Math.max(0, Math.round(this.turnDuration - elapsed));
+  }
+
+  getCurrentHint() {
+    if (!this.currentWord) return '';
+    if (this.state !== 'drawing') return '';
+    // Figure out how many hints have been revealed based on time
+    const elapsed = (Date.now() - this.turnStartTime) / 1000;
+    const ratio = elapsed / this.turnDuration;
+    if (ratio > 0.65) return this.getPartialHint(2);
+    if (ratio > 0.4) return this.getPartialHint(1);
+    return this.getBlankHint(this.currentWord);
   }
 
   getPlayerList() {
