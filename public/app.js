@@ -12,6 +12,34 @@ let isDrawer = false;
 let isOwner = false;
 let roomOwner = null;
 
+// Session persistence
+function getSessionId() {
+  let sid = sessionStorage.getItem('scribble_sessionId');
+  if (!sid) {
+    sid = crypto.randomUUID();
+    sessionStorage.setItem('scribble_sessionId', sid);
+  }
+  return sid;
+}
+const sessionId = getSessionId();
+
+function saveSession(roomId, playerName) {
+  sessionStorage.setItem('scribble_roomId', roomId);
+  sessionStorage.setItem('scribble_playerName', playerName);
+}
+
+function clearSession() {
+  sessionStorage.removeItem('scribble_roomId');
+  sessionStorage.removeItem('scribble_playerName');
+}
+
+function getSavedSession() {
+  const roomId = sessionStorage.getItem('scribble_roomId');
+  const playerName = sessionStorage.getItem('scribble_playerName');
+  if (roomId && playerName) return { roomId, playerName };
+  return null;
+}
+
 // ========================================
 // DOM ELEMENTS
 // ========================================
@@ -65,10 +93,17 @@ const playAgainBtn = document.getElementById('playAgainBtn');
 // ========================================
 
 ageConfirmBtn.addEventListener('click', () => {
+  sessionStorage.setItem('scribble_ageVerified', '1');
   ageGate.classList.add('hidden');
   lobbyScreen.classList.remove('hidden');
   playerNameInput.focus();
 });
+
+// Skip age gate if already verified
+if (sessionStorage.getItem('scribble_ageVerified') === '1') {
+  ageGate.classList.add('hidden');
+  lobbyScreen.classList.remove('hidden');
+}
 
 ageDenyBtn.addEventListener('click', () => {
   document.body.innerHTML = `
@@ -100,7 +135,7 @@ createRoomBtn.addEventListener('click', () => {
     playerNameInput.focus();
     return;
   }
-  socket.emit('createRoom', { playerName: name, rounds: selectedRounds });
+  socket.emit('createRoom', { playerName: name, rounds: selectedRounds, sessionId });
 });
 
 joinRoomBtn.addEventListener('click', () => {
@@ -116,7 +151,7 @@ joinRoomBtn.addEventListener('click', () => {
     roomCodeInput.focus();
     return;
   }
-  socket.emit('joinRoom', { roomId: code, playerName: name });
+  socket.emit('joinRoom', { roomId: code, playerName: name, sessionId });
 });
 
 playerNameInput.addEventListener('input', () => {
@@ -192,6 +227,27 @@ function updateStartButton(count) {
 
 socket.on('connect', () => {
   myId = socket.id;
+
+  // Attempt reconnection if we have saved session data
+  const saved = getSavedSession();
+  if (saved) {
+    socket.emit('reconnectSession', {
+      sessionId,
+      roomId: saved.roomId,
+      playerName: saved.playerName
+    });
+  }
+});
+
+socket.on('reconnectFailed', () => {
+  // Session couldn't reconnect — clear stale data and show lobby
+  clearSession();
+});
+
+socket.on('playerReconnected', ({ playerName, players }) => {
+  addSystemMessage(`${playerName} reconnected! 🔄`);
+  updateWaitingPlayers(players);
+  updatePlayerList(players);
 });
 
 socket.on('roomList', (rooms) => {
@@ -229,15 +285,22 @@ function renderRoomList(rooms) {
         playerNameInput.focus();
         return;
       }
-      socket.emit('joinRoom', { roomId: btn.dataset.room, playerName: name });
+      socket.emit('joinRoom', { roomId: btn.dataset.room, playerName: name, sessionId });
     });
   });
 }
 
-socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerId, gameState }) => {
+socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerId, gameState, reconnected }) => {
   currentRoom = roomId;
   isOwner = owner;
   roomOwner = ownerId;
+
+  // Save session for reconnect persistence
+  const savedName = getSavedSession()?.playerName || playerNameInput.value.trim();
+  saveSession(roomId, savedName);
+
+  // Skip age gate on reconnect
+  ageGate.classList.add('hidden');
   lobbyScreen.classList.add('hidden');
 
   if (state === 'waiting') {
@@ -287,11 +350,15 @@ socket.on('playerJoined', ({ playerName, players }) => {
   addSystemMessage(`${playerName} joined the room! 🎉`);
 });
 
-socket.on('playerLeft', ({ playerName, players }) => {
+socket.on('playerLeft', ({ playerName, players, mayReconnect }) => {
   updateWaitingPlayers(players);
   updatePlayerList(players);
   updateStartButton(players.length);
-  addSystemMessage(`${playerName} left the room 👋`);
+  if (mayReconnect) {
+    addSystemMessage(`${playerName} disconnected — waiting for reconnect... ⏳`);
+  } else {
+    addSystemMessage(`${playerName} left the room 👋`);
+  }
 });
 
 socket.on('ownerUpdate', ({ owner: ownerId }) => {
@@ -480,6 +547,11 @@ playAgainBtn.addEventListener('click', () => {
   gameScreen.classList.add('hidden');
   waitingScreen.classList.remove('hidden');
   updateStartButton();
+});
+
+// Leave room button — clear session so we don't auto-reconnect
+window.addEventListener('beforeunload', () => {
+  // Don't clear — we WANT to reconnect on reload
 });
 
 // ========================================

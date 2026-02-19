@@ -3,9 +3,10 @@ const { getRandomWords } = require('./words');
 class Game {
   constructor(roomId) {
     this.roomId = roomId;
-    this.players = new Map();       // socketId -> { name, score, avatar }
+    this.players = new Map();       // socketId -> { name, score, avatar, sessionId }
     this.state = 'waiting';         // waiting | choosing | drawing | roundEnd | gameOver
     this.owner = null;              // socketId of room creator
+    this.ownerSessionId = null;     // sessionId of room owner (persists across reconnects)
     this.currentDrawer = null;      // socketId
     this.currentWord = null;
     this.wordChoices = [];
@@ -22,9 +23,10 @@ class Game {
     this.turnStartTime = null;
     this.drawingData = [];
     this.chatHistory = [];
+    this.disconnectedPlayers = new Map(); // sessionId -> { name, score, avatar, socketId, timeout }
   }
 
-  addPlayer(socketId, name) {
+  addPlayer(socketId, name, sessionId) {
     const avatarColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
       '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
       '#F0B27A', '#82E0AA', '#F1948A', '#AED6F1', '#D7BDE2'];
@@ -33,13 +35,15 @@ class Game {
     // First player becomes the owner
     if (!this.owner || !this.players.has(this.owner)) {
       this.owner = socketId;
+      this.ownerSessionId = sessionId || null;
     }
 
     this.players.set(socketId, {
       name,
       score: 0,
       avatar: color,
-      isDrawing: false
+      isDrawing: false,
+      sessionId: sessionId || null
     });
     return this.players.get(socketId);
   }
@@ -53,7 +57,87 @@ class Game {
     if (this.owner === socketId) {
       const remaining = [...this.players.keys()];
       this.owner = remaining.length > 0 ? remaining[0] : null;
+      if (this.owner) {
+        const ownerPlayer = this.players.get(this.owner);
+        this.ownerSessionId = ownerPlayer ? ownerPlayer.sessionId : null;
+      } else {
+        this.ownerSessionId = null;
+      }
     }
+  }
+
+  // Hold a disconnected player's seat (for reconnect)
+  holdPlayerSeat(socketId) {
+    const player = this.players.get(socketId);
+    if (!player || !player.sessionId) return null;
+
+    const held = {
+      name: player.name,
+      score: player.score,
+      avatar: player.avatar,
+      sessionId: player.sessionId,
+      wasOwner: this.owner === socketId,
+      wasDrawer: this.currentDrawer === socketId,
+      hadGuessed: this.guessedPlayers.has(socketId)
+    };
+
+    this.disconnectedPlayers.set(player.sessionId, held);
+    return held;
+  }
+
+  // Reconnect: swap old socket ID for new one, restoring all state
+  reconnectPlayer(newSocketId, sessionId) {
+    const held = this.disconnectedPlayers.get(sessionId);
+    if (!held) return null;
+
+    this.disconnectedPlayers.delete(sessionId);
+
+    // Find if old socketId is still in players (shouldn't be, but clean up)
+    for (const [oldId, p] of this.players) {
+      if (p.sessionId === sessionId) {
+        // Swap in turn order
+        this.turnOrder = this.turnOrder.map(id => id === oldId ? newSocketId : id);
+        if (this.currentDrawer === oldId) this.currentDrawer = newSocketId;
+        if (this.owner === oldId) this.owner = newSocketId;
+        if (this.guessedPlayers.has(oldId)) {
+          this.guessedPlayers.delete(oldId);
+          this.guessedPlayers.add(newSocketId);
+        }
+        this.players.delete(oldId);
+        break;
+      }
+    }
+
+    // Add player back with preserved state
+    this.players.set(newSocketId, {
+      name: held.name,
+      score: held.score,
+      avatar: held.avatar,
+      isDrawing: this.currentDrawer === newSocketId,
+      sessionId: sessionId
+    });
+
+    // Restore ownership
+    if (held.wasOwner || this.ownerSessionId === sessionId) {
+      this.owner = newSocketId;
+      this.ownerSessionId = sessionId;
+    }
+
+    // Restore guessed status
+    if (held.hadGuessed) {
+      this.guessedPlayers.add(newSocketId);
+    }
+
+    // Add back to turn order if not already there
+    if (!this.turnOrder.includes(newSocketId) && this.state !== 'waiting') {
+      this.turnOrder.push(newSocketId);
+    }
+
+    return held;
+  }
+
+  hasDisconnectedPlayer(sessionId) {
+    return this.disconnectedPlayers.has(sessionId);
   }
 
   isOwner(socketId) {

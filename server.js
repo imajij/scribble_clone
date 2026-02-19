@@ -13,6 +13,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Room management
 const rooms = new Map();
 const playerRooms = new Map(); // socketId -> roomId
+const sessionToSocket = new Map(); // sessionId -> socketId
+const disconnectTimers = new Map(); // sessionId -> timeout
+const RECONNECT_GRACE_PERIOD = 30000; // 30 seconds to reconnect
 
 function getOrCreateRoom(roomId) {
   if (!rooms.has(roomId)) {
@@ -42,16 +45,99 @@ io.on('connection', (socket) => {
   // Send room list
   socket.emit('roomList', getRoomList());
 
+  // Reconnect attempt
+  socket.on('reconnectSession', ({ sessionId, roomId, playerName }) => {
+    if (!sessionId || !roomId) return;
+
+    const game = rooms.get(roomId);
+    if (!game) {
+      socket.emit('reconnectFailed', { message: 'Room no longer exists' });
+      return;
+    }
+
+    // Cancel the disconnect timer
+    if (disconnectTimers.has(sessionId)) {
+      clearTimeout(disconnectTimers.get(sessionId));
+      disconnectTimers.delete(sessionId);
+    }
+
+    // Try to reconnect into existing seat
+    if (game.hasDisconnectedPlayer(sessionId)) {
+      const held = game.reconnectPlayer(socket.id, sessionId);
+      if (held) {
+        sessionToSocket.set(sessionId, socket.id);
+        playerRooms.set(socket.id, roomId);
+        socket.join(roomId);
+
+        // Build full game state for the reconnected player
+        const payload = {
+          roomId,
+          players: game.getPlayerList(),
+          state: game.state,
+          isOwner: game.isOwner(socket.id),
+          owner: game.owner,
+          reconnected: true
+        };
+
+        if (game.state === 'drawing' || game.state === 'choosing') {
+          const drawerPlayer = game.players.get(game.currentDrawer);
+          payload.gameState = {
+            drawer: game.currentDrawer,
+            drawerName: drawerPlayer ? drawerPlayer.name : 'Unknown',
+            hint: game.getCurrentHint(),
+            wordLength: game.currentWord ? game.currentWord.length : 0,
+            remainingTime: game.getRemainingTime(),
+            roundNum: game.roundNum + 1,
+            maxRounds: game.maxRounds,
+            drawingData: game.drawingData,
+            isChoosing: game.state === 'choosing'
+          };
+          // If this player is the drawer, send them the word
+          if (game.currentDrawer === socket.id && game.currentWord) {
+            payload.gameState.yourWord = game.currentWord;
+          }
+        }
+
+        socket.emit('joinedRoom', payload);
+        socket.to(roomId).emit('playerReconnected', {
+          playerName: held.name,
+          players: game.getPlayerList()
+        });
+        io.to(roomId).emit('ownerUpdate', { owner: game.owner });
+        io.to(roomId).emit('playerList', game.getPlayerList());
+        console.log(`Player reconnected: ${held.name} (${sessionId})`);
+        return;
+      }
+    }
+
+    // Session not held — check if player is still somehow in the game by sessionId
+    let found = false;
+    for (const [existingId, player] of game.players) {
+      if (player.sessionId === sessionId) {
+        found = true;
+        break;
+      }
+    }
+
+    if (!found && game.players.size < 8) {
+      // Rejoin as new player
+      joinRoom(socket, roomId, playerName, sessionId);
+      return;
+    }
+
+    socket.emit('reconnectFailed', { message: 'Could not reconnect' });
+  });
+
   // Create room
-  socket.on('createRoom', ({ playerName, rounds }) => {
+  socket.on('createRoom', ({ playerName, rounds, sessionId }) => {
     const roomId = generateRoomId();
     const game = getOrCreateRoom(roomId);
     if (rounds) game.maxRounds = Math.min(Math.max(rounds, 1), 10);
-    joinRoom(socket, roomId, playerName);
+    joinRoom(socket, roomId, playerName, sessionId);
   });
 
   // Join room
-  socket.on('joinRoom', ({ roomId, playerName }) => {
+  socket.on('joinRoom', ({ roomId, playerName, sessionId }) => {
     const game = rooms.get(roomId);
     if (!game) {
       socket.emit('error', { message: 'Room not found!' });
@@ -61,7 +147,7 @@ io.on('connection', (socket) => {
       socket.emit('error', { message: 'Room is full!' });
       return;
     }
-    joinRoom(socket, roomId, playerName);
+    joinRoom(socket, roomId, playerName, sessionId);
   });
 
   // Start game
@@ -186,7 +272,7 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Disconnect
+  // Disconnect — hold seat for reconnect grace period
   socket.on('disconnect', () => {
     const roomId = playerRooms.get(socket.id);
     if (!roomId) return;
@@ -195,20 +281,33 @@ io.on('connection', (socket) => {
     if (!game) return;
 
     const player = game.players.get(socket.id);
+    if (!player) return;
+
+    const sessionId = player.sessionId;
     const wasDrawer = game.currentDrawer === socket.id;
     const wasOwner = game.isOwner(socket.id);
+    const playerName = player.name;
 
+    // Hold the seat for reconnection
+    if (sessionId) {
+      game.holdPlayerSeat(socket.id);
+    }
+
+    // Remove from active players
     game.removePlayer(socket.id);
     playerRooms.delete(socket.id);
+    if (sessionId) sessionToSocket.delete(sessionId);
 
     io.to(roomId).emit('playerLeft', {
-      playerName: player ? player.name : 'Unknown',
-      players: game.getPlayerList()
+      playerName,
+      players: game.getPlayerList(),
+      mayReconnect: !!sessionId
     });
 
-    if (game.players.size === 0) {
+    if (game.players.size === 0 && game.disconnectedPlayers.size === 0) {
       game.clearTimers();
       rooms.delete(roomId);
+      io.emit('roomList', getRoomList());
       return;
     }
 
@@ -225,25 +324,40 @@ io.on('connection', (socket) => {
       game.clearTimers();
       game.state = 'waiting';
       io.to(roomId).emit('gameReset', { message: 'Not enough players. Waiting for more...' });
-      return;
-    }
-
-    if (wasDrawer && (game.state === 'drawing' || game.state === 'choosing')) {
+    } else if (wasDrawer && (game.state === 'drawing' || game.state === 'choosing')) {
       endTurn(roomId, game, false);
     }
 
     io.to(roomId).emit('playerList', game.getPlayerList());
-    console.log(`Player disconnected: ${socket.id}`);
+    console.log(`Player disconnected: ${playerName} (${socket.id})`);
 
-    // Broadcast updated room list to lobby
+    // Set grace period timer — fully remove held seat after timeout
+    if (sessionId) {
+      const timer = setTimeout(() => {
+        disconnectTimers.delete(sessionId);
+        if (game.disconnectedPlayers.has(sessionId)) {
+          game.disconnectedPlayers.delete(sessionId);
+          console.log(`Session expired: ${sessionId} (${playerName})`);
+          // Clean up empty room
+          if (game.players.size === 0 && game.disconnectedPlayers.size === 0) {
+            game.clearTimers();
+            rooms.delete(roomId);
+            io.emit('roomList', getRoomList());
+          }
+        }
+      }, RECONNECT_GRACE_PERIOD);
+      disconnectTimers.set(sessionId, timer);
+    }
+
     io.emit('roomList', getRoomList());
   });
 });
 
-function joinRoom(socket, roomId, playerName) {
+function joinRoom(socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
-  game.addPlayer(socket.id, playerName);
+  game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
+  if (sessionId) sessionToSocket.set(sessionId, socket.id);
 
   socket.join(roomId);
 
