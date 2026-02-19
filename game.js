@@ -62,7 +62,7 @@ class Game {
     this.shuffleTurnOrder();
     this.turnIndex = -1;
     this.players.forEach(p => { p.score = 0; p.isDrawing = false; });
-    this.nextTurn();
+    return this.nextTurn();
   }
 
   shuffleTurnOrder() {
