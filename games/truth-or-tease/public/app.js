@@ -491,7 +491,7 @@
       $('#questionText').textContent = gs.question.text;
       const isHotSeat = gs.hotSeat === mySocketId;
       $('#hotSeatLabel').textContent = isHotSeat
-        ? '🔥 It's YOUR turn — spill it!'
+        ? "🔥 It's YOUR turn — spill it!"
         : `🔥 ${gs.hotSeatName} is in the hot seat`;
       if (isHotSeat) { show($('#answerBox')); hide($('#waitingForAnswer')); }
       else { hide($('#answerBox')); show($('#waitingForAnswer')); }
