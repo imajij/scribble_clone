@@ -43,6 +43,13 @@ const ROUTES = {
     icon: '\u{1F4DD}',
     color: '#7f5af0',
   },
+  '/this-or-that': {
+    gameId: 'this-or-that',
+    assetBase: '/this-or-that',
+    scripts: ['app.js'],
+    icon: '\u{1F914}',
+    color: '#8b5cf6',
+  },
 };
 
 // ── Map game-id → SPA route (for home page card links) ──
@@ -60,6 +67,7 @@ const ageGateEl = document.getElementById('age-gate');
 let activeStylesheet = null;
 let activeScripts    = [];
 let pendingNavigate  = null; // path deferred until age-verified
+let platformSocket   = null; // /platform namespace for live player counts
 
 // ============================================================
 // Public: navigate
@@ -257,6 +265,10 @@ function loadHome() {
           '<div class="card-meta">' +
             '<span class="meta-badge">' + game.type + '</span>' +
             '<span class="meta-players">' + game.minPlayers + '\u2013' + game.maxPlayers + ' players</span>' +
+          '</div>' +
+          '<div class="online-badge" id="online-' + game.id + '">' +
+            '<span class="online-dot"></span>' +
+            '<span class="online-count">0 online</span>' +
           '</div>';
 
         grid.appendChild(card);
@@ -266,6 +278,9 @@ function loadHome() {
       var grid = document.getElementById('homeGrid');
       if (grid) grid.innerHTML = '<p class="spa-loading">Could not load games. Try refreshing.</p>';
     });
+
+  // Set up live player count tracking
+  setupPlatformSocket();
 }
 
 // ============================================================
@@ -337,4 +352,52 @@ function escapeHtml(str) {
   var div = document.createElement('div');
   div.appendChild(document.createTextNode(str));
   return div.innerHTML;
+}
+
+// ============================================================
+// Live player count tracking via /platform namespace
+// ============================================================
+
+function setupPlatformSocket() {
+  // Only connect once
+  if (platformSocket) return;
+  if (typeof io === 'undefined') return;
+
+  platformSocket = io('/platform');
+
+  platformSocket.on('playerCounts', function(counts) {
+    var total = 0;
+    Object.keys(counts).forEach(function(gameId) {
+      var count = counts[gameId];
+      total += count;
+      var badge = document.getElementById('online-' + gameId);
+      if (badge) {
+        var countEl = badge.querySelector('.online-count');
+        var dotEl = badge.querySelector('.online-dot');
+        if (countEl) countEl.textContent = count + ' online';
+        if (count > 0) {
+          badge.classList.add('active');
+          if (dotEl) dotEl.classList.add('active');
+        } else {
+          badge.classList.remove('active');
+          if (dotEl) dotEl.classList.remove('active');
+        }
+      }
+    });
+
+    // Inject total online into navbar
+    var totalEl = document.getElementById('totalOnline');
+    if (!totalEl) {
+      var navUser = document.querySelector('#navUser') || document.querySelector('.nav-user');
+      if (navUser) {
+        totalEl = document.createElement('span');
+        totalEl.id = 'totalOnline';
+        totalEl.className = 'total-online';
+        navUser.prepend(totalEl);
+      }
+    }
+    if (totalEl) {
+      totalEl.textContent = total > 0 ? '\u{1F7E2} ' + total + ' online' : '';
+    }
+  });
 }

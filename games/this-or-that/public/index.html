@@ -3,31 +3,149 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>This or That 🤔</title>
+  <title>This or That 🤔 | After Dark Games</title>
   <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root { --bg:#0f0a1a; --card:#1a1128; --accent:#8b5cf6; --text:#f1e8ff; --muted:#9b8ab8; }
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;
-      background-image:radial-gradient(ellipse at 50% 40%,rgba(139,92,246,.1) 0%,transparent 50%)}
-    .card{background:var(--card);border:1px solid rgba(139,92,246,.2);border-radius:20px;padding:48px;max-width:520px;box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 60px rgba(139,92,246,.15)}
-    .icon{font-size:4rem;margin-bottom:16px}
-    h1{font-family:'Fredoka One',cursive;font-size:2.5rem;background:linear-gradient(135deg,#8b5cf6,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
-    .tag{color:var(--muted);font-size:1.1rem;margin-bottom:24px}
-    .badge{display:inline-block;padding:8px 20px;border-radius:40px;font-weight:700;background:rgba(139,92,246,.15);color:var(--accent);font-size:.95rem;margin-bottom:24px}
-    p{color:var(--muted);line-height:1.7;margin-bottom:24px}
-    a{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;border-radius:10px;background:rgba(139,92,246,.12);color:var(--accent);text-decoration:none;font-weight:700;transition:all .2s}
-    a:hover{background:rgba(139,92,246,.25);transform:translateY(-2px)}
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🤔</div>
-    <h1>This or That</h1>
-    <p class="tag">Would you rather… but make it 18+</p>
-    <div class="badge">🚧 Coming Soon</div>
-    <p>Vote on wild dilemmas and see who thinks like you. Warning: these choices get spicy fast.</p>
-    <a href="/">← Back to Games</a>
+
+  <!-- Lobby -->
+  <div id="lobbyScreen" class="screen">
+    <div class="lobby-container">
+      <div class="lobby-header">
+        <h1 class="logo">🤔 This or That</h1>
+        <p class="subtitle">Would you rather… but make it 18+</p>
+      </div>
+      <div class="lobby-form">
+        <div class="input-group">
+          <label for="playerName">Your Name</label>
+          <input type="text" id="playerName" placeholder="Enter your name..." maxlength="20" autocomplete="off">
+        </div>
+        <div class="lobby-actions">
+          <button id="createRoomBtn" class="btn btn-primary"><span class="btn-icon">🎉</span> Create Room</button>
+          <div class="divider"><span>OR</span></div>
+          <div class="join-row">
+            <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="6" class="room-code-input">
+            <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+          </div>
+        </div>
+        <div class="room-settings">
+          <div class="setting-row">
+            <label>Rounds:</label>
+            <div class="selector">
+              <button class="sel-btn" data-rounds="3">3</button>
+              <button class="sel-btn active" data-rounds="5">5</button>
+              <button class="sel-btn" data-rounds="8">8</button>
+              <button class="sel-btn" data-rounds="10">10</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <label>Heat 🌶️:</label>
+            <div class="selector">
+              <button class="heat-btn" data-heat="1">Mild</button>
+              <button class="heat-btn active" data-heat="2">Spicy</button>
+              <button class="heat-btn" data-heat="3">Extreme</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="activeRooms" class="active-rooms hidden">
+        <h3>🔥 Active Rooms</h3>
+        <div id="roomListContainer" class="room-list"></div>
+      </div>
+    </div>
   </div>
+
+  <!-- Waiting Room -->
+  <div id="waitingScreen" class="screen hidden">
+    <div class="waiting-container">
+      <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+      <p class="share-text">Share this code with your friends!</p>
+      <div id="waitingPlayers" class="player-grid"></div>
+      <div class="waiting-actions">
+        <button id="startGameBtn" class="btn btn-primary btn-large" disabled>Need 2+ players to start</button>
+        <p class="player-count">Players: <span id="playerCount">0</span>/20</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="gameScreen" class="screen hidden">
+    <div class="game-layout">
+      <div class="players-panel">
+        <div class="round-info">Round <span id="roundDisplay">1</span> / <span id="maxRoundDisplay">5</span></div>
+        <div id="playerList" class="player-list"></div>
+      </div>
+
+      <div class="center-stage">
+        <div class="top-bar">
+          <div id="phaseLabel" class="phase-label">Vote!</div>
+          <div id="timerDisplay" class="timer">15</div>
+        </div>
+
+        <!-- Voting Phase -->
+        <div id="votingPhase" class="hidden">
+          <div class="question-card">
+            <span id="questionBadge" class="q-badge spicy">Spicy 🌶️</span>
+            <p id="questionText" class="q-prefix">Would you rather...</p>
+          </div>
+
+          <div class="vote-buttons" style="position:relative;">
+            <button id="voteBtnA" class="vote-btn vote-btn-a">
+              <span class="vote-label">Option A</span>
+              <span class="vote-option-text"></span>
+            </button>
+            <button id="voteBtnB" class="vote-btn vote-btn-b">
+              <span class="vote-label">Option B</span>
+              <span class="vote-option-text"></span>
+            </button>
+            <div class="vs-badge">VS</div>
+          </div>
+
+          <p id="voteStatus" class="vote-status"></p>
+        </div>
+
+        <!-- Results Phase -->
+        <div id="resultsPhase" class="hidden">
+          <div class="results-card">
+            <div class="result-bars">
+              <div id="resultBarA" class="result-bar result-bar-a">
+                <div id="resultPercentA" class="result-percent">50%</div>
+                <div id="resultTextA" class="result-text">Option A</div>
+                <div id="resultVotersA" class="result-voters"></div>
+              </div>
+              <div id="resultBarB" class="result-bar result-bar-b">
+                <div id="resultPercentB" class="result-percent">50%</div>
+                <div id="resultTextB" class="result-text">Option B</div>
+                <div id="resultVotersB" class="result-voters"></div>
+              </div>
+            </div>
+            <div id="majorityLabel" class="majority-label tie">🤝 It's a TIE!</div>
+            <div id="resultScores" class="result-scores"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-panel">
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-area">
+          <input type="text" id="chatInput" placeholder="Chat..." maxlength="200" autocomplete="off">
+          <button id="sendBtn" class="btn btn-send">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div id="gameOverOverlay" class="overlay hidden">
+    <div class="game-over-card">
+      <h1>🏆 Game Over!</h1>
+      <div id="finalScores" class="final-scores"></div>
+      <button id="playAgainBtn" class="btn btn-primary btn-large">Play Again</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
