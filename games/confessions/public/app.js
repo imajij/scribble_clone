@@ -302,9 +302,9 @@
     if (count >= 3 && isOwner) {
       btn.disabled = false;
       btn.textContent = '🚀 Start Game!';
-    } else if (count < 3) {
+    } else if (count < 2) {
       btn.disabled = true;
-      btn.textContent = 'Need 3+ players to start';
+      btn.textContent = 'Need 2+ players to start';
     } else {
       btn.disabled = true;
       btn.textContent = 'Waiting for host to start...';

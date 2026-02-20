@@ -414,7 +414,7 @@
     const btn = $('#startGameBtn');
     if (count === undefined) count = parseInt($('#pCount').textContent, 10) || 0;
     if (isOwner && count >= 3) { btn.disabled = false; btn.textContent = 'Start Game 🚀'; }
-    else if (isOwner) { btn.disabled = true; btn.textContent = 'Need 3+ players'; }
+    else if (isOwner) { btn.disabled = true; btn.textContent = 'Need 2+ players'; }
     else { btn.disabled = true; btn.textContent = 'Waiting for owner…'; }
   }
 

@@ -144,7 +144,7 @@ class ScenarioGame {
   }
 
   canStart() {
-    return this.players.size >= 3 && this.state === 'waiting';
+    return this.players.size >= 2 && this.state === 'waiting';
   }
 
   getPlayerList() {

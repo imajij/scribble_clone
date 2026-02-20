@@ -85,7 +85,7 @@ class ConfessionGame {
   }
 
   isOwner(socketId) { return this.owner === socketId; }
-  canStart() { return this.state === 'waiting' && this.players.size >= 3; }
+  canStart() { return this.state === 'waiting' && this.players.size >= 2; }
 
   getPlayerList() {
     const list = [];

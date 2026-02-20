@@ -207,7 +207,7 @@ function register(io) {
         nsp.to(roomId).emit('systemMessage', { message: `${newOwner ? newOwner.name : 'Someone'} is now the room owner` });
       }
 
-      if (game.players.size < 3 && game.state !== 'waiting') {
+      if (game.players.size < 2 && game.state !== 'waiting') {
         game.clearTimers();
         game.state = 'waiting';
         game.roundNum = 0;
@@ -288,7 +288,7 @@ function advanceToResults(nsp, roomId, game) {
 }
 
 function advanceToNextRound(nsp, roomId, game) {
-  if (game.players.size < 3) {
+  if (game.players.size < 2) {
     game.state = 'waiting';
     game.clearTimers();
     nsp.to(roomId).emit('gameReset', { message: 'Not enough players — waiting…', players: game.getPlayerList() });

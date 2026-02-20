@@ -244,12 +244,12 @@ function loadHome() {
   container.innerHTML =
     '<div class="home-hero">' +
       '<h1 class="logo">\u{1F319} After Dark Games</h1>' +
-      '<p class="tagline">Party games for grown-ups \u2014 no kids allowed.</p>' +
+      '<p class="tagline">Intimate games for couples \u2014 just the two of you.</p>' +
     '</div>' +
     '<div class="home-grid" id="homeGrid">' +
       '<div class="spa-loading">Loading games\u2026</div>' +
     '</div>' +
-    '<div class="home-footer">18+ only \u00B7 Built with \u2764\uFE0F and poor life choices</div>';
+    '<div class="home-footer">18+ only \u00B7 Made for couples \u00B7 Built with \u2764\uFE0F</div>';
 
   fetch('/api/games')
     .then(function(res) { return res.json(); })

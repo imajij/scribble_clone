@@ -10,7 +10,7 @@ const games = [
   {
     id: 'scribble',
     name: 'Scribble After Dark',
-    description: 'Draw dirty, guess dirtier — the adults-only drawing & guessing party game.',
+    description: 'Draw naughty things for your partner to guess — couples-only sketching fun.',
     thumbnail: '/scribble/thumbnail.png',
     route: '/scribble',
     type: 'realtime',            // realtime | solo | turn-based
@@ -21,7 +21,7 @@ const games = [
   {
     id: 'truth-or-tease',
     name: 'Truth or Tease',
-    description: 'Spicy truth-or-dare with a naughty twist. Pick truth or take the tease.',
+    description: 'Intimate truths & teases designed for you and your partner. No holding back.',
     thumbnail: '/truth-or-tease/thumbnail.png',
     route: '/truth-or-tease',
     type: 'realtime',
@@ -32,7 +32,7 @@ const games = [
   {
     id: 'this-or-that',
     name: 'This or That',
-    description: 'Would you rather… but make it 18+. Vote and see who thinks like you.',
+    description: 'Would you rather… couples edition. Vote together, discover each other.',
     thumbnail: '/this-or-that/thumbnail.png',
     route: '/this-or-that',
     type: 'realtime',
@@ -43,29 +43,29 @@ const games = [
   {
     id: 'scenario',
     name: 'Scenario',
-    description: 'Wild "what would you do" scenarios. Debate, judge, and crown the best answer.',
+    description: 'Romantic, spicy & awkward scenarios for couples. Share answers & connect.',
     thumbnail: '/scenario/thumbnail.png',
     route: '/scenario',
     type: 'turn-based',
-    minPlayers: 3,
+    minPlayers: 2,
     maxPlayers: 12,
     enabled: true
   },
   {
     id: 'confessions',
     name: 'Confessions',
-    description: 'Anonymous confessions, then guess who said what. Secrets will be spilled.',
+    description: 'Confess your deepest secrets to your partner. From sweet to scandalous.',
     thumbnail: '/confessions/thumbnail.png',
     route: '/confessions',
     type: 'turn-based',
-    minPlayers: 3,
+    minPlayers: 2,
     maxPlayers: 16,
     enabled: true
   },
   {
     id: 'dare-roulette',
     name: 'Dare Roulette',
-    description: 'Spin the wheel, face the dare. Complete it for glory or chicken out in shame.',
+    description: 'Spin the wheel, dare your partner. Sensual, romantic, or naughty — no backing out.',
     thumbnail: '/dare-roulette/thumbnail.png',
     route: '/dare-roulette',
     type: 'realtime',
@@ -76,7 +76,7 @@ const games = [
   {
     id: 'story-builder',
     name: 'Story Builder',
-    description: 'Collaborate on a wild story one sentence at a time. Take turns, watch it unfold live.',
+    description: 'Write a couples story together, one sentence at a time. Sweet, spicy, or both.',
     thumbnail: '/story-builder/thumbnail.png',
     route: '/story-builder',
     type: 'turn-based',
