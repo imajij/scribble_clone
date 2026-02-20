@@ -16,7 +16,11 @@ let roomOwner = null;
 function getSessionId() {
   let sid = sessionStorage.getItem('scribble_sessionId');
   if (!sid) {
-    sid = crypto.randomUUID();
+    sid = (crypto.randomUUID && crypto.randomUUID()) ||
+      ('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+      }));
     sessionStorage.setItem('scribble_sessionId', sid);
   }
   return sid;
