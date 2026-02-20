@@ -1,0 +1,168 @@
+<!-- ═══════ Lobby ═══════ -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-wrap">
+    <div class="lobby-header">
+      <h1 class="logo">🎭 Scenario</h1>
+      <p class="subtitle">Wild "what would you do" scenarios. Debate, judge, crown the best answer.</p>
+    </div>
+
+    <div class="lobby-card">
+      <div class="field">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" maxlength="20" placeholder="Enter name…" autocomplete="off">
+      </div>
+
+      <button id="createRoomBtn" class="btn btn-primary"><span class="ico">🎉</span> Create Room</button>
+
+      <div class="divider"><span>OR</span></div>
+
+      <div class="join-row">
+        <input type="text" id="roomCodeInput" maxlength="6" placeholder="Room Code" class="code-input" autocomplete="off">
+        <button id="joinRoomBtn" class="btn btn-accent">Join</button>
+      </div>
+
+      <!-- Settings -->
+      <details class="settings-panel" open>
+        <summary>⚙️ Room Settings</summary>
+        <div class="setting">
+          <label>Rounds</label>
+          <div class="pills">
+            <button class="pill" data-rounds="2">2</button>
+            <button class="pill active" data-rounds="3">3</button>
+            <button class="pill" data-rounds="5">5</button>
+            <button class="pill" data-rounds="8">8</button>
+          </div>
+        </div>
+        <div class="setting">
+          <label>Intensity 🔥</label>
+          <div class="pills">
+            <button class="int-pill" data-int="1">Mild</button>
+            <button class="int-pill active" data-int="2">Medium</button>
+            <button class="int-pill" data-int="3">Extreme</button>
+          </div>
+        </div>
+        <div class="setting">
+          <label>Categories</label>
+          <div class="pills cat-pills">
+            <button class="cat-pill active" data-cat="awkward">😬 Awkward</button>
+            <button class="cat-pill active" data-cat="spicy">🌶️ Spicy</button>
+            <button class="cat-pill active" data-cat="absurd">🤪 Absurd</button>
+            <button class="cat-pill active" data-cat="moral">⚖️ Moral</button>
+            <button class="cat-pill active" data-cat="wildcard">🃏 Wildcard</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Active rooms -->
+    <div id="activeRooms" class="rooms-section hidden">
+      <h3>🎲 Active Rooms</h3>
+      <div id="roomListBox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ Waiting Room ═══════ -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-wrap">
+    <h2>Room <span id="roomCodeShow" class="room-badge"></span></h2>
+    <p class="share-hint">Share this code so friends can join!</p>
+    <div id="waitingPlayers" class="chip-grid"></div>
+    <button id="startGameBtn" class="btn btn-primary btn-lg" disabled>Need 3+ players</button>
+    <p class="pcount">Players: <span id="pCount">0</span>/12</p>
+  </div>
+</div>
+
+<!-- ═══════ Game ═══════ -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-grid">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="round-tag">Round <span id="roundNum">1</span>/<span id="maxRounds">3</span></div>
+      <div class="phase-indicator">
+        <span id="phaseLabel" class="phase-badge">Reading</span>
+      </div>
+      <div id="playerList" class="sb-players"></div>
+      <div class="history-toggle">
+        <button id="historyBtn" class="btn btn-sm">📜 History</button>
+      </div>
+    </aside>
+
+    <!-- Main stage -->
+    <main class="stage">
+      <!-- Scenario display (always visible during round) -->
+      <div id="scenarioArea" class="scenario-area hidden">
+        <div class="scenario-card">
+          <span id="scenarioCatBadge" class="cat-badge"></span>
+          <p id="scenarioText" class="scenario-text"></p>
+        </div>
+      </div>
+
+      <!-- Reading phase -->
+      <div id="readingArea" class="phase-area hidden">
+        <div class="reading-prompt">
+          <div class="reading-emoji">📖</div>
+          <p class="reading-label">Read the scenario…</p>
+          <div class="timer-bar"><div id="readingTimer" class="timer-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Answering phase -->
+      <div id="answeringArea" class="phase-area hidden">
+        <div class="answer-form">
+          <p class="answer-prompt">✍️ What would YOU do?</p>
+          <textarea id="answerInput" maxlength="500" placeholder="Type your answer…" rows="3"></textarea>
+          <div class="answer-footer">
+            <span id="answerCount" class="answer-counter">0/0 answered</span>
+            <button id="submitAnswerBtn" class="btn btn-primary">Submit Answer</button>
+          </div>
+          <div id="answerSubmitted" class="submitted-msg hidden">✅ Answer submitted! Waiting for others…</div>
+          <div class="timer-bar"><div id="answeringTimer" class="timer-fill"></div></div>
+        </div>
+      </div>
+
+      <!-- Voting phase -->
+      <div id="votingArea" class="phase-area hidden">
+        <p class="vote-prompt">🗳️ Vote for the BEST answer!</p>
+        <p class="vote-sub">You can't vote for your own answer.</p>
+        <div id="voteCards" class="vote-cards"></div>
+        <span id="voteCount" class="vote-counter">0/0 voted</span>
+        <div id="voteSubmitted" class="submitted-msg hidden">✅ Vote cast! Waiting for others…</div>
+        <div class="timer-bar"><div id="votingTimer" class="timer-fill"></div></div>
+      </div>
+
+      <!-- Results phase -->
+      <div id="resultsArea" class="phase-area hidden">
+        <p class="results-title">🏆 Results</p>
+        <div id="resultCards" class="result-cards"></div>
+      </div>
+
+      <!-- Chat -->
+      <div class="chat-strip">
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-row">
+          <input type="text" id="chatInput" placeholder="Chat…" maxlength="200" autocomplete="off">
+          <button id="chatSend" class="btn btn-send">➤</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═══════ History overlay ═══════ -->
+<div id="historyOverlay" class="overlay hidden">
+  <div class="overlay-card history-card">
+    <h2>📜 Round History</h2>
+    <div id="historyList" class="history-list"></div>
+    <button id="closeHistory" class="btn btn-accent">Close</button>
+  </div>
+</div>
+
+<!-- ═══════ Game Over overlay ═══════ -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="overlay-card gameover-card">
+    <h1>🏆 Game Over!</h1>
+    <div id="finalScores" class="final-scores"></div>
+    <button id="playAgainBtn" class="btn btn-primary btn-lg">Play Again</button>
+  </div>
+</div>

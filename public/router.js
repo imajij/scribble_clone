@@ -50,6 +50,20 @@ const ROUTES = {
     icon: '\u{1F914}',
     color: '#8b5cf6',
   },
+  '/scenario': {
+    gameId: 'scenario',
+    assetBase: '/scenario',
+    scripts: ['app.js'],
+    icon: '\u{1F3AD}',
+    color: '#f59e0b',
+  },
+  '/confessions': {
+    gameId: 'confessions',
+    assetBase: '/confessions',
+    scripts: ['app.js'],
+    icon: '\u{1F92B}',
+    color: '#22c55e',
+  },
 };
 
 // ── Map game-id → SPA route (for home page card links) ──

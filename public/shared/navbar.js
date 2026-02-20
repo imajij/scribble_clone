@@ -10,6 +10,8 @@ const NAV_GAMES = [
   { path: '/roulette',      icon: '\u{1F3B0}', label: 'Roulette' },
   { path: '/story-builder', icon: '\u{1F4DD}', label: 'Story' },
   { path: '/this-or-that',  icon: '\u{1F914}', label: 'This/That' },
+  { path: '/scenario',      icon: '\u{1F3AD}', label: 'Scenario' },
+  { path: '/confessions',   icon: '\u{1F92B}', label: 'Confess' },
 ];
 
 export function render(container, activePath) {
