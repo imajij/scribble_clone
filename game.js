@@ -1,8 +1,9 @@
-const { getRandomWords } = require('./words');
+const { getRandomWords, VALID_PACKS, DEFAULT_PACK } = require('./words');
 
 class Game {
-  constructor(roomId) {
+  constructor(roomId, wordPack) {
     this.roomId = roomId;
+    this.wordPack = VALID_PACKS.includes(wordPack) ? wordPack : DEFAULT_PACK;
     this.players = new Map();       // socketId -> { name, score, avatar, sessionId }
     this.state = 'waiting';         // waiting | choosing | drawing | roundEnd | gameOver
     this.owner = null;              // socketId of room creator
@@ -24,6 +25,47 @@ class Game {
     this.drawingData = [];
     this.chatHistory = [];
     this.disconnectedPlayers = new Map(); // sessionId -> { name, score, avatar, socketId, timeout }
+
+    // Custom word mode
+    this.customWords = [];           // sanitized custom word list (max 10)
+    this.useCustomWords = false;     // whether custom mode is active
+  }
+
+  /**
+   * Enable custom word mode with a sanitized word list.
+   * @param {string[]} words — raw words from the client
+   */
+  setCustomWords(words) {
+    if (!Array.isArray(words)) { this.useCustomWords = false; return; }
+
+    const sanitized = words
+      .map(w => (typeof w === 'string' ? w : '').trim().substring(0, 40))
+      .filter(w => w.length > 0);
+
+    // Deduplicate (case-insensitive) while preserving original casing
+    const seen = new Set();
+    const unique = [];
+    for (const w of sanitized) {
+      const key = w.toLowerCase();
+      if (!seen.has(key)) { seen.add(key); unique.push(w); }
+    }
+
+    this.customWords = unique.slice(0, 10);
+    this.useCustomWords = this.customWords.length > 0;
+  }
+
+  /**
+   * Return `count` word choices for the current turn.
+   * Uses custom words when available; falls back to the selected pack
+   * if fewer than `count` custom words remain.
+   */
+  getWordChoices(count = 3) {
+    if (this.useCustomWords && this.customWords.length >= count) {
+      const shuffled = [...this.customWords].sort(() => Math.random() - 0.5);
+      return shuffled.slice(0, count);
+    }
+    // Fallback to pack-based selection
+    return getRandomWords(count, this.wordPack);
   }
 
   addPlayer(socketId, name, sessionId) {
@@ -225,7 +267,7 @@ class Game {
 
     this.players.get(this.currentDrawer).isDrawing = true;
     this.state = 'choosing';
-    this.wordChoices = getRandomWords(3);
+    this.wordChoices = this.getWordChoices(3);
 
     return {
       event: 'choosing',

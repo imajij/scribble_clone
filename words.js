@@ -3,6 +3,10 @@
 // Strictly NSFW — for the Scribble After Dark game
 // ========================================
 
+// ----------------------------------------
+// Raw word categories (source of truth)
+// ----------------------------------------
+
 const wordCategories = {
 
   anatomy: [
@@ -87,16 +91,98 @@ const wordCategories = {
   ]
 };
 
-// Flatten and deduplicate
-const allWords = [...new Set(Object.values(wordCategories).flat())];
+// ----------------------------------------
+// Word packs — curated subsets of categories
+// ----------------------------------------
 
-function getRandomWords(count = 3) {
-  const shuffled = [...allWords].sort(() => Math.random() - 0.5);
+const WORD_PACKS = {
+  classic: {
+    label: 'Classic',
+    description: 'Innuendos, anatomy & bedroom basics',
+    categories: ['anatomy', 'bedroomActivities', 'dirtyInnuendos', 'risqueClothing']
+  },
+  extreme: {
+    label: 'Extreme',
+    description: 'Kink, fetish & adult toys',
+    categories: ['kinkAndFetish', 'adultToys', 'adultEntertainment', 'naughtyScenarios']
+  },
+  romantic: {
+    label: 'Romantic',
+    description: 'Bedroom activities, relationships & clothing',
+    categories: ['bedroomActivities', 'relationships', 'risqueClothing', 'anatomy']
+  },
+  party: {
+    label: 'Party',
+    description: 'Drinking games, scenarios & entertainment',
+    categories: ['partyAndDrinking', 'adultEntertainment', 'naughtyScenarios', 'dirtyInnuendos']
+  },
+  mixed: {
+    label: 'Mixed (All)',
+    description: 'Every category combined',
+    categories: Object.keys(wordCategories)
+  }
+};
+
+// ----------------------------------------
+// Build deduplicated word lists per pack
+// ----------------------------------------
+
+function buildPackWords(packId) {
+  const pack = WORD_PACKS[packId];
+  if (!pack) return [];
+  const words = pack.categories.flatMap(cat => wordCategories[cat] || []);
+  return [...new Set(words)];
+}
+
+// Pre-build for quick access
+const packWordLists = {};
+for (const id of Object.keys(WORD_PACKS)) {
+  packWordLists[id] = buildPackWords(id);
+}
+
+// ----------------------------------------
+// Public helpers
+// ----------------------------------------
+
+const VALID_PACKS = Object.keys(WORD_PACKS);
+const DEFAULT_PACK = 'mixed';
+
+/**
+ * Return `count` random words from the given pack.
+ * Falls back to 'mixed' if packId is invalid.
+ */
+function getRandomWords(count = 3, packId = DEFAULT_PACK) {
+  const list = packWordLists[packId] || packWordLists[DEFAULT_PACK];
+  const shuffled = [...list].sort(() => Math.random() - 0.5);
   return shuffled.slice(0, count);
 }
 
-function getRandomWord() {
-  return allWords[Math.floor(Math.random() * allWords.length)];
+/**
+ * Return a single random word from the given pack.
+ */
+function getRandomWord(packId = DEFAULT_PACK) {
+  const list = packWordLists[packId] || packWordLists[DEFAULT_PACK];
+  return list[Math.floor(Math.random() * list.length)];
 }
 
-module.exports = { wordCategories, allWords, getRandomWords, getRandomWord };
+/**
+ * Return metadata for all packs (id, label, description, wordCount).
+ */
+function getPackList() {
+  return VALID_PACKS.map(id => ({
+    id,
+    label: WORD_PACKS[id].label,
+    description: WORD_PACKS[id].description,
+    wordCount: packWordLists[id].length
+  }));
+}
+
+module.exports = {
+  wordCategories,
+  WORD_PACKS,
+  VALID_PACKS,
+  DEFAULT_PACK,
+  getRandomWords,
+  getRandomWord,
+  getPackList
+};

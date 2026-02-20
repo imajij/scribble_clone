@@ -2,7 +2,7 @@
 // SCRIBBLE AFTER DARK - CLIENT APP
 // ========================================
 
-const socket = io();
+const socket = io('/scribble');
 let drawingCanvas;
 let myId = null;
 let currentRoom = null;

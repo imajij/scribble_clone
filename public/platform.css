@@ -1,0 +1,163 @@
+/* ========================================
+   AFTER DARK GAMES — PLATFORM STYLES
+   ======================================== */
+
+:root {
+  --bg-dark: #0f0a1a;
+  --bg-card: #1a1128;
+  --bg-panel: #241834;
+  --accent: #a855f7;
+  --accent-light: #c084fc;
+  --accent-glow: rgba(168, 85, 247, 0.3);
+  --pink: #ec4899;
+  --yellow: #fbbf24;
+  --text: #f1e8ff;
+  --text-muted: #9b8ab8;
+  --border: rgba(168, 85, 247, 0.15);
+  --radius: 16px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text);
+  min-height: 100vh;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(236, 72, 153, 0.04) 0%, transparent 50%);
+}
+
+/* ---- Header ---- */
+.hero {
+  text-align: center;
+  padding: 64px 24px 40px;
+}
+
+.logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: 3.2rem;
+  background: linear-gradient(135deg, var(--accent-light), var(--pink), var(--yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 10px;
+}
+
+.tagline {
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* ---- Game grid ---- */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.loading {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px;
+}
+
+/* ---- Card ---- */
+.game-card {
+  --card-accent: var(--accent);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 4px;
+  background: var(--card-accent);
+}
+
+.game-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 30px color-mix(in srgb, var(--card-accent) 25%, transparent);
+  border-color: var(--card-accent);
+}
+
+.card-icon {
+  font-size: 3rem;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 1.5rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.card-desc {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  flex: 1;
+  margin-bottom: 16px;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meta-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+  color: var(--card-accent);
+}
+
+.meta-players {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ---- Footer ---- */
+footer {
+  text-align: center;
+  padding: 32px 24px 48px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .hero { padding: 40px 16px 28px; }
+  .logo { font-size: 2.2rem; }
+  .tagline { font-size: 1rem; }
+  .game-grid { gap: 16px; padding: 0 16px 32px; }
+  .game-card { padding: 24px 20px 20px; }
+  .card-icon { font-size: 2.4rem; }
+  .card-title { font-size: 1.25rem; }
+}
