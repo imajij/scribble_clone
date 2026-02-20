@@ -308,7 +308,7 @@ socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerI
   saveSession(roomId, savedName);
 
   // Skip age gate on reconnect
-  ageGate.classList.add('hidden');
+  if (ageGate) ageGate.classList.add('hidden');
   lobbyScreen.classList.add('hidden');
 
   if (gameState && state !== 'waiting') {
