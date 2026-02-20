@@ -72,6 +72,17 @@ const games = [
     minPlayers: 2,
     maxPlayers: 10,
     enabled: true
+  },
+  {
+    id: 'story-builder',
+    name: 'Story Builder',
+    description: 'Collaborate on a wild story one sentence at a time. Take turns, watch it unfold live.',
+    thumbnail: '/story-builder/thumbnail.png',
+    route: '/story-builder',
+    type: 'turn-based',
+    minPlayers: 2,
+    maxPlayers: 8,
+    enabled: true
   }
 ];
 
