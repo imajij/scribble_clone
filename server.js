@@ -323,7 +323,10 @@ io.on('connection', (socket) => {
     if (game.players.size < 2 && game.state !== 'waiting') {
       game.clearTimers();
       game.state = 'waiting';
-      io.to(roomId).emit('gameReset', { message: 'Not enough players. Waiting for more...' });
+      io.to(roomId).emit('gameReset', {
+        message: 'Not enough players. Waiting for more...',
+        players: game.getPlayerList()
+      });
     } else if (wasDrawer && (game.state === 'drawing' || game.state === 'choosing')) {
       endTurn(roomId, game, false);
     }

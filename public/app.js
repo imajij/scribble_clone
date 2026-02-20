@@ -303,13 +303,7 @@ socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerI
   ageGate.classList.add('hidden');
   lobbyScreen.classList.add('hidden');
 
-  if (state === 'waiting') {
-    // Normal waiting room
-    waitingScreen.classList.remove('hidden');
-    roomCodeDisplay.textContent = roomId;
-    updateWaitingPlayers(players);
-    updateStartButton(players.length);
-  } else if (gameState) {
+  if (gameState && state !== 'waiting') {
     // Joining an ongoing game — go straight to game screen
     showGameScreen();
     roundDisplay.textContent = gameState.roundNum;
@@ -341,6 +335,13 @@ socket.on('joinedRoom', ({ roomId, players, state, isOwner: owner, owner: ownerI
 
     updatePlayerList(players);
     addSystemMessage('You joined an ongoing game — spectate this round!');
+  } else {
+    // Waiting room (game not started, or game ended/reset)
+    waitingScreen.classList.remove('hidden');
+    gameScreen.classList.add('hidden');
+    roomCodeDisplay.textContent = roomId;
+    updateWaitingPlayers(players);
+    updateStartButton(players.length);
   }
 });
 
@@ -530,14 +531,26 @@ socket.on('gameOver', ({ scores }) => {
   gameOverOverlay.classList.remove('hidden');
 });
 
-socket.on('gameReset', ({ message }) => {
+socket.on('gameReset', ({ message, players }) => {
   addSystemMessage(message);
   hideOverlays();
   clearTimer();
-  drawingCanvas.disable();
-  drawingCanvas.clear();
-  wordHint.textContent = 'Waiting for players...';
+  if (drawingCanvas) {
+    drawingCanvas.disable();
+    drawingCanvas.clear();
+  }
   drawTools.classList.add('hidden');
+
+  // Transition back to waiting screen so host can start a new game
+  gameScreen.classList.add('hidden');
+  gameOverOverlay.classList.add('hidden');
+  waitingScreen.classList.remove('hidden');
+  roomCodeDisplay.textContent = currentRoom;
+  if (players) {
+    updateWaitingPlayers(players);
+  } else {
+    updateWaitingPlayers(); // re-render from cached list
+  }
   updateStartButton();
 });
 
