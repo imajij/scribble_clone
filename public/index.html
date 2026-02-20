@@ -3,73 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>After Dark Games 🌙</title>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/platform.css">
+  <title>After Dark Games &#x1F319;</title>
+  <link rel="stylesheet" href="/shared/theme.css">
 </head>
 <body>
-  <header class="hero">
-    <h1 class="logo">🌙 After Dark Games</h1>
-    <p class="tagline">Party games for grown-ups — no kids allowed.</p>
-  </header>
 
-  <main class="game-grid" id="gameGrid">
-    <p class="loading">Loading games…</p>
-  </main>
+  <!-- ── Navbar (shared, always visible) ── -->
+  <nav class="navbar" id="navbar"></nav>
 
-  <footer>
-    <p>18+ only · Built with ❤️ and poor life choices</p>
-  </footer>
+  <!-- ── Age Gate (shared, shown once) ── -->
+  <div class="age-overlay hidden" id="age-gate">
+    <div class="age-card">
+      <div class="age-icon">&#x1F51E;</div>
+      <h1>After Dark Games</h1>
+      <p class="tagline">Party games for grown-ups</p>
+      <p class="age-text">This platform contains adult-themed content.<br>You must be 18+ to enter.</p>
+      <button class="age-btn age-btn-confirm" id="age-confirm-btn">I'm 18+ &#x2014; Let Me In</button>
+      <button class="age-btn age-btn-deny" id="age-deny-btn">I'm Under 18</button>
+    </div>
+  </div>
 
-  <script>
-    const ICONS = {
-      'scribble':       '🎨',
-      'truth-or-tease': '💋',
-      'this-or-that':   '🤔',
-      'scenario':       '🎭',
-      'confessions':    '🤫'
-    };
+  <!-- ── Game container (dynamic content loaded here) ── -->
+  <div id="game-container"></div>
 
-    const COLORS = {
-      'scribble':       '#a855f7',
-      'truth-or-tease': '#ec4899',
-      'this-or-that':   '#8b5cf6',
-      'scenario':       '#fbbf24',
-      'confessions':    '#22c55e'
-    };
+  <!-- ── Socket.IO (shared, always available) ── -->
+  <script src="/socket.io/socket.io.js"></script>
 
-    async function loadGames() {
-      try {
-        const res = await fetch('/api/games');
-        const games = await res.json();
-        const grid = document.getElementById('gameGrid');
-        grid.innerHTML = '';
-
-        games.forEach(game => {
-          const color = COLORS[game.id] || '#a855f7';
-          const icon = ICONS[game.id] || '🎮';
-          const card = document.createElement('a');
-          card.href = game.route;
-          card.className = 'game-card';
-          card.style.setProperty('--card-accent', color);
-          card.innerHTML = `
-            <div class="card-icon">${icon}</div>
-            <h2 class="card-title">${game.name}</h2>
-            <p class="card-desc">${game.description}</p>
-            <div class="card-meta">
-              <span class="meta-badge">${game.type}</span>
-              <span class="meta-players">${game.minPlayers}–${game.maxPlayers} players</span>
-            </div>
-          `;
-          grid.appendChild(card);
-        });
-      } catch (err) {
-        document.getElementById('gameGrid').innerHTML =
-          '<p class="loading">Could not load games. Try refreshing.</p>';
-      }
-    }
-
-    loadGames();
-  </script>
+  <!-- ── SPA Router (ES module) ── -->
+  <script type="module" src="/router.js"></script>
 </body>
 </html>

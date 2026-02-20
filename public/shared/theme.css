@@ -1,0 +1,478 @@
+/* ========================================
+   AFTER DARK GAMES — Shared Theme
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg: #0f0a1a;
+  --bg-card: #1a1128;
+  --bg-light: #241834;
+  --accent: #a855f7;
+  --accent-light: #c084fc;
+  --accent-glow: rgba(168, 85, 247, 0.3);
+  --success: #2cb67d;
+  --warning: #fbbf24;
+  --danger: #e53170;
+  --pink: #ec4899;
+  --text: #f1e8ff;
+  --text-dim: #9b8ab8;
+  --text-muted: #72757e;
+  --border: rgba(168, 85, 247, 0.15);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-head: 'Fredoka One', cursive;
+  --font-body: 'Nunito', sans-serif;
+  --navbar-h: 48px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-top: var(--navbar-h);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(236, 72, 153, 0.04) 0%, transparent 50%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ── Navbar ── */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--navbar-h);
+  background: rgba(15, 10, 26, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 1rem;
+  z-index: 9999;
+  gap: 0.5rem;
+}
+
+.nav-logo {
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  color: var(--accent-light);
+  margin-right: 0.75rem;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.nav-logo:hover {
+  opacity: 0.8;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.2rem;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
+}
+
+.nav-link {
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  background: var(--bg-light);
+  color: var(--text);
+}
+
+.nav-link.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.nav-user {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.nav-user-name {
+  font-weight: 700;
+  color: var(--accent-light);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Age Gate ── */
+.age-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.age-card {
+  text-align: center;
+  max-width: 420px;
+  padding: 3rem 2rem;
+}
+
+.age-card .age-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+
+.age-card h1 {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  background: linear-gradient(135deg, var(--accent-light), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 0.5rem;
+}
+
+.age-card .tagline {
+  color: var(--text-dim);
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+
+.age-card .age-text {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.age-btn {
+  display: block;
+  width: 100%;
+  padding: 0.85rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 0.6rem;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.age-btn:hover {
+  transform: translateY(-1px);
+}
+
+.age-btn-confirm {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.35);
+}
+
+.age-btn-deny {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+/* ── Home Page ── */
+.home-hero {
+  text-align: center;
+  padding: 48px 24px 32px;
+}
+
+.home-hero .logo {
+  font-family: var(--font-head);
+  font-size: 2.8rem;
+  background: linear-gradient(135deg, var(--accent-light), var(--pink), var(--warning));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.home-hero .tagline {
+  color: var(--text-dim);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+}
+
+.game-card {
+  --card-accent: var(--accent);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px 20px;
+  color: var(--text);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: var(--card-accent);
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border-color: var(--card-accent);
+}
+
+.card-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.card-title {
+  font-family: var(--font-head);
+  font-size: 1.3rem;
+  margin-bottom: 6px;
+}
+
+.card-desc {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  flex: 1;
+  margin-bottom: 12px;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.meta-badge {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+  color: var(--card-accent);
+}
+
+.meta-players {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── Online badges (live player tracking) ── */
+.online-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: color 0.3s;
+}
+
+.online-badge.active {
+  color: #22c55e;
+}
+
+.online-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.online-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+
+  0%,
+  100% {
+    box-shadow: 0 0 4px #22c55e;
+  }
+
+  50% {
+    box-shadow: 0 0 10px #22c55e;
+  }
+}
+
+.total-online {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #22c55e;
+  white-space: nowrap;
+  margin-right: 8px;
+}
+
+.home-footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* ── Game container ── */
+#game-container {
+  min-height: calc(100vh - var(--navbar-h));
+  position: relative;
+}
+
+/* ── Loading spinner ── */
+.spa-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  color: var(--text-dim);
+  font-size: 1.1rem;
+}
+
+.spa-loading::after {
+  content: '';
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 0.8rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── 404 ── */
+.spa-404 {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.spa-404 h2 {
+  font-family: var(--font-head);
+  font-size: 3rem;
+  color: var(--accent-light);
+  margin-bottom: 0.5rem;
+}
+
+.spa-404 p {
+  margin-bottom: 1.5rem;
+}
+
+.spa-404 a {
+  padding: 0.6rem 1.5rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  :root {
+    --navbar-h: 42px;
+  }
+
+  .home-hero {
+    padding: 32px 16px 20px;
+  }
+
+  .home-hero .logo {
+    font-size: 2rem;
+  }
+
+  .home-grid {
+    gap: 12px;
+    padding: 0 12px 32px;
+  }
+
+  .nav-links {
+    gap: 0;
+  }
+
+  .nav-link {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.45rem;
+  }
+}

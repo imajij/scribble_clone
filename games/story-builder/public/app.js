@@ -557,4 +557,10 @@
     renderStory();
   }
 
+  // ── SPA Cleanup ──
+  window.__gameCleanup = function () {
+    socket.disconnect();
+    if (timerInterval) clearInterval(timerInterval);
+  };
+
 })();

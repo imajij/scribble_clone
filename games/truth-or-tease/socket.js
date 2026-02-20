@@ -8,6 +8,7 @@
 
 const TruthLiveGame = require('./truthLive');
 const { getQuestionStats } = require('./questions');
+const tracker = require('../../playerTracker');
 
 const rooms = new Map();
 const playerRooms = new Map();        // socketId → roomId
@@ -199,6 +200,7 @@ function register(io) {
       game.removePlayer(socket.id);
       playerRooms.delete(socket.id);
       if (sessionId) sessionToSocket.delete(sessionId);
+      tracker.playerLeft('truth-or-tease');
 
       nsp.to(roomId).emit('playerLeft', { playerName, players: game.getPlayerList(), mayReconnect: !!sessionId });
 
@@ -259,6 +261,7 @@ function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
+  tracker.playerJoined('truth-or-tease');
   socket.join(roomId);
 
   socket.emit('joinedRoom', buildJoinPayload(game, socket.id, roomId, false));

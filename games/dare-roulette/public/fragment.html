@@ -1,0 +1,142 @@
+<!-- Dare Roulette — SPA Fragment -->
+<!-- Loaded into #game-container by router.js -->
+
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-wrap">
+    <div class="lobby-header">
+      <h1 class="logo">&#x1F3B0; Dare Roulette</h1>
+      <p class="subtitle">Spin the wheel. Face the dare. No backing out.</p>
+    </div>
+
+    <div class="lobby-card">
+      <div class="field">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" maxlength="20" placeholder="Enter name&#x2026;" autocomplete="off">
+      </div>
+
+      <button id="createRoomBtn" class="btn btn-primary"><span class="ico">&#x1F389;</span> Create Room</button>
+
+      <div class="divider"><span>OR</span></div>
+
+      <div class="join-row">
+        <input type="text" id="roomCodeInput" maxlength="6" placeholder="Room Code" class="code-input" autocomplete="off">
+        <button id="joinRoomBtn" class="btn btn-accent">Join</button>
+      </div>
+
+      <details class="settings-panel" open>
+        <summary>&#x2699;&#xFE0F; Room Settings</summary>
+        <div class="setting">
+          <label>Rounds</label>
+          <div class="pills">
+            <button class="pill" data-rounds="1">1</button>
+            <button class="pill active" data-rounds="3">3</button>
+            <button class="pill" data-rounds="5">5</button>
+          </div>
+        </div>
+        <div class="setting">
+          <label>Intensity &#x1F525;</label>
+          <div class="pills">
+            <button class="int-pill" data-int="1">Mild</button>
+            <button class="int-pill active" data-int="2">Medium</button>
+            <button class="int-pill" data-int="3">Extreme</button>
+          </div>
+        </div>
+        <div class="setting">
+          <label>Categories</label>
+          <div class="pills cat-pills">
+            <button class="cat-pill active" data-cat="physical">&#x1F4AA; Physical</button>
+            <button class="cat-pill active" data-cat="social">&#x1F4F1; Social</button>
+            <button class="cat-pill active" data-cat="creative">&#x1F3A8; Creative</button>
+            <button class="cat-pill active" data-cat="embarrassing">&#x1F633; Embarrassing</button>
+            <button class="cat-pill active" data-cat="wildcard">&#x1F0CF; Wildcard</button>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div id="activeRooms" class="rooms-section hidden">
+      <h3>&#x1F3B2; Active Rooms</h3>
+      <div id="roomListBox"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting Room -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-wrap">
+    <h2>Room <span id="roomCodeShow" class="room-badge"></span></h2>
+    <p class="share-hint">Share this code so friends can join!</p>
+    <div id="waitingPlayers" class="chip-grid"></div>
+    <button id="startGameBtn" class="btn btn-primary btn-lg" disabled>Need 2+ players</button>
+    <p class="pcount">Players: <span id="pCount">0</span>/10</p>
+  </div>
+</div>
+
+<!-- Game -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-grid">
+    <aside class="sidebar">
+      <div class="round-tag">Round <span id="roundNum">1</span>/<span id="maxRounds">3</span></div>
+      <div id="playerList" class="sb-players"></div>
+      <div class="history-toggle">
+        <button id="historyBtn" class="btn btn-sm">&#x1F4DC; History</button>
+      </div>
+    </aside>
+
+    <main class="stage">
+      <div id="spinnerArea" class="spinner-area">
+        <div id="wheelWrap" class="wheel-wrap">
+          <div id="wheel" class="wheel">
+            <div class="wheel-inner">&#x1F3B0;</div>
+          </div>
+          <div class="wheel-pointer">&#x25BC;</div>
+        </div>
+        <p id="turnLabel" class="turn-label"></p>
+        <button id="spinBtn" class="btn btn-primary btn-lg spin-btn hidden">SPIN!</button>
+        <div id="spinWait" class="spin-wait hidden">Waiting for them to spin&#x2026;</div>
+      </div>
+
+      <div id="dareArea" class="dare-area hidden">
+        <div class="dare-card">
+          <span id="dareCatBadge" class="cat-badge"></span>
+          <p id="dareText" class="dare-text"></p>
+          <div class="intensity-dots" id="intensityDots"></div>
+        </div>
+        <div id="resolveBox" class="resolve-box hidden">
+          <button id="completedBtn" class="btn btn-success btn-lg">&#x2705; I Did It! (+100)</button>
+          <button id="chickenBtn" class="btn btn-danger btn-lg">&#x1F414; Chicken Out</button>
+        </div>
+        <div id="resolveWait" class="resolve-wait hidden">Waiting for them to face the dare&#x2026;</div>
+      </div>
+
+      <div id="resolvedSplash" class="resolved-splash hidden"></div>
+
+      <div class="chat-strip">
+        <div id="chatLog" class="chat-log"></div>
+        <div class="chat-row">
+          <input type="text" id="chatInput" placeholder="Chat&#x2026;" maxlength="200" autocomplete="off">
+          <button id="chatSend" class="btn btn-send">&#x27A4;</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- History overlay -->
+<div id="historyOverlay" class="overlay hidden">
+  <div class="overlay-card history-card">
+    <h2>&#x1F4DC; Dare History</h2>
+    <div id="historyList" class="history-list"></div>
+    <button id="closeHistory" class="btn btn-accent">Close</button>
+  </div>
+</div>
+
+<!-- Game Over overlay -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="overlay-card gameover-card">
+    <h1>&#x1F3C6; Game Over!</h1>
+    <div id="finalScores" class="final-scores"></div>
+    <button id="playAgainBtn" class="btn btn-primary btn-lg">Play Again</button>
+  </div>
+</div>

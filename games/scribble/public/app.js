@@ -93,32 +93,36 @@ const finalScores = document.getElementById('finalScores');
 const playAgainBtn = document.getElementById('playAgainBtn');
 
 // ========================================
-// AGE GATE
+// AGE GATE (guarded for SPA mode)
 // ========================================
 
-ageConfirmBtn.addEventListener('click', () => {
-  sessionStorage.setItem('scribble_ageVerified', '1');
-  ageGate.classList.add('hidden');
-  lobbyScreen.classList.remove('hidden');
-  playerNameInput.focus();
-});
+if (ageConfirmBtn) {
+  ageConfirmBtn.addEventListener('click', () => {
+    sessionStorage.setItem('scribble_ageVerified', '1');
+    ageGate.classList.add('hidden');
+    lobbyScreen.classList.remove('hidden');
+    playerNameInput.focus();
+  });
+}
 
-// Skip age gate if already verified
-if (sessionStorage.getItem('scribble_ageVerified') === '1') {
-  ageGate.classList.add('hidden');
+// Skip age gate if already verified or running inside SPA shell
+if (!ageGate || sessionStorage.getItem('scribble_ageVerified') === '1') {
+  if (ageGate) ageGate.classList.add('hidden');
   lobbyScreen.classList.remove('hidden');
 }
 
-ageDenyBtn.addEventListener('click', () => {
-  document.body.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:Nunito,sans-serif;color:#9b8ab8;">
-      <div>
-        <h2 style="font-size:2rem;margin-bottom:12px;">🚫 Sorry!</h2>
-        <p>This game is for adults (18+) only.<br>Come back when you're older! 👋</p>
+if (ageDenyBtn) {
+  ageDenyBtn.addEventListener('click', () => {
+    document.body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;font-family:Nunito,sans-serif;color:#9b8ab8;">
+        <div>
+          <h2 style="font-size:2rem;margin-bottom:12px;">🚫 Sorry!</h2>
+          <p>This game is for adults (18+) only.<br>Come back when you're older! 👋</p>
+        </div>
       </div>
-    </div>
-  `;
-});
+    `;
+  });
+}
 
 // ========================================
 // LOBBY
@@ -750,3 +754,12 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+// ========================================
+// SPA CLEANUP
+// ========================================
+window.__gameCleanup = function () {
+  socket.disconnect();
+  if (timerInterval) clearInterval(timerInterval);
+  if (drawingCanvas) drawingCanvas = null;
+};

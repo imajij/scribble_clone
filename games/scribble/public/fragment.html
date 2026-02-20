@@ -1,0 +1,145 @@
+<!-- Scribble After Dark — SPA Fragment -->
+<!-- Loaded into #game-container by router.js -->
+
+<!-- Lobby screen (visible by default — age gate handled by SPA shell) -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-header">
+      <h1 class="logo">&#x1F319; Scribble After Dark</h1>
+      <p class="subtitle">Draw dirty, guess dirtier</p>
+    </div>
+
+    <div class="lobby-form">
+      <div class="input-group">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" placeholder="Enter your name..." maxlength="20" autocomplete="off">
+      </div>
+
+      <div class="lobby-actions">
+        <button id="createRoomBtn" class="btn btn-primary">
+          <span class="btn-icon">&#x1F389;</span> Create Room
+        </button>
+        <div class="divider"><span>OR</span></div>
+        <div class="join-row">
+          <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="6" class="room-code-input">
+          <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+
+      <div class="room-settings">
+        <label>Rounds: </label>
+        <div class="round-selector">
+          <button class="round-btn" data-rounds="2">2</button>
+          <button class="round-btn active" data-rounds="3">3</button>
+          <button class="round-btn" data-rounds="5">5</button>
+          <button class="round-btn" data-rounds="8">8</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="activeRooms" class="active-rooms hidden">
+      <h3>&#x1F525; Active Rooms</h3>
+      <div id="roomListContainer" class="room-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting room -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-container">
+    <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+    <p class="share-text">Share this code with your friends!</p>
+    <div id="waitingPlayers" class="player-grid"></div>
+    <div class="waiting-actions">
+      <button id="startGameBtn" class="btn btn-primary btn-large" disabled>
+        Need 2+ players to start
+      </button>
+      <p class="player-count">Players: <span id="playerCount">0</span>/8</p>
+    </div>
+  </div>
+</div>
+
+<!-- Game screen -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-layout">
+    <div class="players-panel">
+      <div class="round-info">
+        Round <span id="roundDisplay">1</span> / <span id="maxRoundDisplay">3</span>
+      </div>
+      <div id="playerList" class="player-list"></div>
+    </div>
+
+    <div class="canvas-area">
+      <div class="top-bar">
+        <div id="wordHint" class="word-hint">Waiting...</div>
+        <div id="timerDisplay" class="timer">80</div>
+      </div>
+
+      <div id="wordChoiceOverlay" class="word-choice-overlay hidden">
+        <h3>Choose a word to draw:</h3>
+        <div id="wordChoices" class="word-choices"></div>
+      </div>
+
+      <div id="drawingInfoOverlay" class="drawing-info-overlay hidden">
+        <p id="drawingInfoText"></p>
+      </div>
+
+      <canvas id="drawCanvas" width="800" height="600"></canvas>
+
+      <div id="drawTools" class="draw-tools hidden">
+        <div class="color-palette">
+          <button class="color-btn active" data-color="#000000" style="background:#000000"></button>
+          <button class="color-btn" data-color="#FFFFFF" style="background:#FFFFFF; border:2px solid #ccc"></button>
+          <button class="color-btn" data-color="#FF0000" style="background:#FF0000"></button>
+          <button class="color-btn" data-color="#FF6B35" style="background:#FF6B35"></button>
+          <button class="color-btn" data-color="#FBBF24" style="background:#FBBF24"></button>
+          <button class="color-btn" data-color="#22C55E" style="background:#22C55E"></button>
+          <button class="color-btn" data-color="#3B82F6" style="background:#3B82F6"></button>
+          <button class="color-btn" data-color="#8B5CF6" style="background:#8B5CF6"></button>
+          <button class="color-btn" data-color="#EC4899" style="background:#EC4899"></button>
+          <button class="color-btn" data-color="#78350F" style="background:#78350F"></button>
+          <button class="color-btn" data-color="#6B7280" style="background:#6B7280"></button>
+          <button class="color-btn" data-color="#FDE68A" style="background:#FDE68A"></button>
+        </div>
+        <div class="brush-sizes">
+          <button class="size-btn" data-size="2"><span style="width:4px;height:4px"></span></button>
+          <button class="size-btn active" data-size="5"><span style="width:8px;height:8px"></span></button>
+          <button class="size-btn" data-size="10"><span style="width:14px;height:14px"></span></button>
+          <button class="size-btn" data-size="20"><span style="width:22px;height:22px"></span></button>
+        </div>
+        <div class="tool-actions">
+          <button id="eraserBtn" class="tool-btn" title="Eraser">&#x1F9F9;</button>
+          <button id="fillBtn" class="tool-btn" title="Fill">&#x1FAA3;</button>
+          <button id="undoBtn" class="tool-btn" title="Undo">&#x21A9;&#xFE0F;</button>
+          <button id="clearBtn" class="tool-btn" title="Clear All">&#x1F5D1;&#xFE0F;</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type your guess..." maxlength="100" autocomplete="off">
+        <button id="sendBtn" class="btn btn-send">&#x27A4;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Turn end overlay -->
+<div id="turnEndOverlay" class="overlay hidden">
+  <div class="turn-end-card">
+    <h2 id="turnEndTitle"></h2>
+    <p id="turnEndWord" class="revealed-word"></p>
+    <div id="turnEndScores" class="turn-scores"></div>
+  </div>
+</div>
+
+<!-- Game over overlay -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="game-over-card">
+    <h1>&#x1F3C6; Game Over!</h1>
+    <div id="finalScores" class="final-scores"></div>
+    <button id="playAgainBtn" class="btn btn-primary btn-large">Play Again</button>
+  </div>
+</div>

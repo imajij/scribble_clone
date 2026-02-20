@@ -47,23 +47,30 @@
   const socket = io('/truth-or-tease', { autoConnect: false });
 
   // ============================================================
-  // Age Gate
+  // Age Gate (guarded for SPA mode)
   // ============================================================
   const ageConfirmed = localStorage.getItem('tot-age-confirmed');
-  if (ageConfirmed === 'true') {
-    hide(ageGate);
+  if (!ageGate || ageConfirmed === 'true') {
+    if (ageGate) hide(ageGate);
     initLobby();
   }
 
-  $('#ageConfirmBtn').addEventListener('click', () => {
-    localStorage.setItem('tot-age-confirmed', 'true');
-    hide(ageGate);
-    initLobby();
-  });
+  const _ageConfirmBtn = $('#ageConfirmBtn');
+  const _ageDenyBtn    = $('#ageDenyBtn');
 
-  $('#ageDenyBtn').addEventListener('click', () => {
-    window.location.href = '/';
-  });
+  if (_ageConfirmBtn) {
+    _ageConfirmBtn.addEventListener('click', () => {
+      localStorage.setItem('tot-age-confirmed', 'true');
+      if (ageGate) hide(ageGate);
+      initLobby();
+    });
+  }
+
+  if (_ageDenyBtn) {
+    _ageDenyBtn.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+  }
 
   // ============================================================
   // Lobby Init
@@ -569,4 +576,10 @@
     d.textContent = str;
     return d.innerHTML;
   }
+
+  // ── SPA Cleanup ──
+  window.__gameCleanup = function () {
+    socket.disconnect();
+    if (timerInterval) clearInterval(timerInterval);
+  };
 })();

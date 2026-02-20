@@ -404,4 +404,9 @@
     while (c.children.length > 100) c.removeChild(c.firstChild);
   }
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // ── SPA Cleanup ──
+  window.__gameCleanup = function () {
+    socket.disconnect();
+  };
 })();

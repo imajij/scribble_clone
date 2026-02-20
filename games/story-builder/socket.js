@@ -5,6 +5,7 @@
 // Auto-discovered by server.js
 
 const StoryBuilderGame = require('./storyBuilder');
+const tracker = require('../../playerTracker');
 
 const rooms = new Map();
 const playerRooms = new Map();        // socketId → roomId
@@ -154,6 +155,7 @@ function register(io) {
       game.removePlayer(socket.id);
       playerRooms.delete(socket.id);
       if (sid) sessionToSocket.delete(sid);
+      tracker.playerLeft('story-builder');
 
       nsp.to(roomId).emit('playerLeft', { playerName: pName, mayReconnect: !!sid });
 
@@ -220,6 +222,7 @@ function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
+  tracker.playerJoined('story-builder');
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
   socket.join(roomId);
 

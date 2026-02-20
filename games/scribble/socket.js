@@ -7,6 +7,7 @@
 
 const Game = require('../../game');
 const { VALID_PACKS, DEFAULT_PACK, getPackList } = require('../../words');
+const tracker = require('../../playerTracker');
 
 // Room management (scoped to this game)
 const rooms = new Map();
@@ -291,6 +292,7 @@ function register(io) {
       game.removePlayer(socket.id);
       playerRooms.delete(socket.id);
       if (sessionId) sessionToSocket.delete(sessionId);
+      tracker.playerLeft('scribble');
 
       nsp.to(roomId).emit('playerLeft', {
         playerName,
@@ -357,6 +359,7 @@ function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
+  tracker.playerJoined('scribble');
 
   socket.join(roomId);
 

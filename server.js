@@ -19,6 +19,7 @@ const path = require('path');
 const fs = require('fs');
 const { getAll, getById, getIds } = require('./gameRegistry');
 const { getPackList } = require('./words');
+const tracker = require('./playerTracker');
 
 // ---- Express + Socket.IO bootstrap ----
 const app = express();
@@ -33,6 +34,17 @@ app.use(express.json());
 
 app.get('/api/games', (_req, res) => {
   res.json(getAll());
+});
+
+// Live player counts across all games (must be before :id route)
+app.get('/api/games/status', (_req, res) => {
+  const status = tracker.getStatus();
+  const games = getAll().map(g => ({
+    id: g.id,
+    name: g.name,
+    online: status[g.id] || 0
+  }));
+  res.json({ games, total: Object.values(status).reduce((s, n) => s + n, 0) });
 });
 
 app.get('/api/games/:id', (req, res) => {
@@ -50,16 +62,23 @@ const gamesDir = path.join(__dirname, 'games');
 getAll().forEach((game) => {
   const publicDir = path.join(gamesDir, game.id, 'public');
   if (fs.existsSync(publicDir)) {
-    app.use(game.route, express.static(publicDir));
+    app.use(game.route, express.static(publicDir, { index: false, redirect: false }));
     console.log(`  📂 ${game.route} → games/${game.id}/public`);
   }
 });
 
 // ============================================================
-// 3. Platform landing page (catch-all for /)
+// 3. Platform landing page + SPA shell
 // ============================================================
 
 app.use(express.static(path.join(__dirname, 'public')));
+
+// SPA catch-all: serve index.html for any unmatched GET request
+// (lets client-side router handle /scribble, /truth-live, /roulette, /story-builder)
+const SPA_SHELL = path.join(__dirname, 'public', 'index.html');
+app.get('/{*path}', (_req, res) => {
+  res.sendFile(SPA_SHELL);
+});
 
 // ============================================================
 // 4. Per-game Socket.IO namespaces
@@ -74,6 +93,22 @@ getAll().forEach((game) => {
       console.log(`  🔌 Socket.IO namespace registered: /${game.id}`);
     }
   }
+});
+
+// ============================================================
+// 5. Platform Socket.IO — live player count broadcasting
+// ============================================================
+
+const platformNsp = io.of('/platform');
+
+platformNsp.on('connection', (socket) => {
+  // Send current counts immediately on connect
+  socket.emit('playerCounts', tracker.getStatus());
+});
+
+// Broadcast to all homepage clients whenever any game's count changes
+tracker.on('update', (status) => {
+  platformNsp.emit('playerCounts', status);
 });
 
 // ============================================================
