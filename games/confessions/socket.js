@@ -1,28 +1,28 @@
 // ========================================
-// THIS OR THAT — Socket.IO Handler
+// CONFESSIONS — Socket.IO Handler
 // ========================================
-// Pattern: register(io) → /this-or-that namespace
+// Pattern: register(io) → /confessions namespace
 // Auto-discovered by server.js
 
-const ThisOrThatGame = require('./thisOrThat');
+const ConfessionGame = require('./confessionGame');
 const tracker = require('../../playerTracker');
 
 const rooms = new Map();
-const playerRooms = new Map();        // socketId → roomId
-const sessionToSocket = new Map();    // sessionId → socketId
-const disconnectTimers = new Map();   // sessionId → timeout
+const playerRooms = new Map();
+const sessionToSocket = new Map();
+const disconnectTimers = new Map();
 const RECONNECT_GRACE = 30000;
-const RESULT_PAUSE = 5000;            // 5s to view results before next round
+const REVEAL_PAUSE = 6000;
 
 function getOrCreateRoom(id) {
-  if (!rooms.has(id)) rooms.set(id, new ThisOrThatGame(id));
+  if (!rooms.has(id)) rooms.set(id, new ConfessionGame(id));
   return rooms.get(id);
 }
 
 function getRoomList() {
   const list = [];
   rooms.forEach((g, id) => {
-    if (g.players.size > 0) list.push({ id, players: g.players.size, state: g.state, maxPlayers: 20 });
+    if (g.players.size > 0) list.push({ id, players: g.players.size, state: g.state, maxPlayers: 16 });
   });
   return list;
 }
@@ -34,13 +34,11 @@ function genRoomId() {
   return id;
 }
 
-// ============================================================
-
 function register(io) {
-  const nsp = io.of('/this-or-that');
+  const nsp = io.of('/confessions');
 
   nsp.on('connection', (socket) => {
-    console.log(`[this-or-that] Connected: ${socket.id}`);
+    console.log(`[confessions] Connected: ${socket.id}`);
     socket.emit('roomList', getRoomList());
 
     // ── Reconnect ──
@@ -66,17 +64,15 @@ function register(io) {
           return;
         }
       }
-      if (game.players.size < 20) { joinRoom(nsp, socket, roomId, playerName, sessionId); return; }
+      if (game.players.size < 16) { joinRoom(nsp, socket, roomId, playerName, sessionId); return; }
       socket.emit('reconnectFailed', { message: 'Could not reconnect' });
     });
 
     // ── Create room ──
-    socket.on('createRoom', ({ playerName, rounds, heat, sessionId }) => {
+    socket.on('createRoom', ({ playerName, heat, sessionId }) => {
       const roomId = genRoomId();
       const game = getOrCreateRoom(roomId);
-      if (rounds) game.maxRounds = Math.min(Math.max(rounds, 1), 15);
       if (heat) game.heatLevel = Math.min(Math.max(heat, 1), 3);
-      game.voteDuration = 15;
       joinRoom(nsp, socket, roomId, playerName, sessionId);
     });
 
@@ -84,7 +80,7 @@ function register(io) {
     socket.on('joinRoom', ({ roomId, playerName, sessionId }) => {
       const game = rooms.get(roomId);
       if (!game) { socket.emit('error', { message: 'Room not found!' }); return; }
-      if (game.players.size >= 20) { socket.emit('error', { message: 'Room is full!' }); return; }
+      if (game.players.size >= 16) { socket.emit('error', { message: 'Room is full!' }); return; }
       joinRoom(nsp, socket, roomId, playerName, sessionId);
     });
 
@@ -96,27 +92,62 @@ function register(io) {
       if (!game || !game.canStart()) return;
       if (!game.isOwner(socket.id)) { socket.emit('error', { message: 'Only host can start!' }); return; }
 
-      game.startGame();
-      startNextRound(nsp, roomId, game);
+      const assignments = game.startGame();
+
+      // Send each player their personal prompt
+      game.players.forEach((player) => {
+        const prompt = assignments[player.id];
+        const playerSocket = nsp.sockets.get(player.id);
+        if (playerSocket && prompt) {
+          playerSocket.emit('submitPhase', {
+            prompt: prompt.text,
+            heat: prompt.heat,
+            duration: game.submitDuration,
+          });
+        }
+      });
+
+      nsp.to(roomId).emit('phaseChange', { phase: 'submitting', duration: game.submitDuration });
+
+      // Submit timer
+      game.submitTimer = setTimeout(() => {
+        game.submitTimer = null;
+        endSubmitting(nsp, roomId, game);
+      }, game.submitDuration * 1000);
     });
 
-    // ── Cast vote ──
-    socket.on('vote', ({ choice }) => {
+    // ── Submit confession ──
+    socket.on('submitConfession', ({ text }) => {
       const roomId = playerRooms.get(socket.id);
       if (!roomId) return;
       const game = rooms.get(roomId);
       if (!game) return;
 
-      const ok = game.castVote(socket.id, choice);
+      const ok = game.submitConfession(socket.id, text);
       if (ok) {
-        // Broadcast progress
-        nsp.to(roomId).emit('voteProgress', game.getVoteProgress());
+        socket.emit('confessionReceived');
+        nsp.to(roomId).emit('submitProgress', game.getSubmitProgress());
+        if (game.allSubmitted()) {
+          if (game.submitTimer) { clearTimeout(game.submitTimer); game.submitTimer = null; }
+          endSubmitting(nsp, roomId, game);
+        }
+      }
+    });
 
-        // If all voted, end voting early
-        if (game.allVoted()) {
-          clearTimeout(game.voteTimer);
-          game.voteTimer = null;
-          endVoting(nsp, roomId, game);
+    // ── Submit guess ──
+    socket.on('submitGuess', ({ guessedAuthorId }) => {
+      const roomId = playerRooms.get(socket.id);
+      if (!roomId) return;
+      const game = rooms.get(roomId);
+      if (!game) return;
+
+      const ok = game.submitGuess(socket.id, guessedAuthorId);
+      if (ok) {
+        socket.emit('guessReceived');
+        nsp.to(roomId).emit('guessProgress', game.getGuessProgress());
+        if (game.allGuessed()) {
+          if (game.guessTimer) { clearTimeout(game.guessTimer); game.guessTimer = null; }
+          endGuessing(nsp, roomId, game);
         }
       }
     });
@@ -158,7 +189,6 @@ function register(io) {
       if (!player) { playerRooms.delete(socket.id); return; }
 
       if (game.state !== 'waiting') {
-        // Hold for reconnect
         game.holdPlayerForReconnect(socket.id);
         playerRooms.delete(socket.id);
 
@@ -171,7 +201,7 @@ function register(io) {
           }
           nsp.to(roomId).emit('playerLeft', { playerName: player.name, players: game.getPlayerList() });
           nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
-          tracker.playerLeft('this-or-that');
+          tracker.playerLeft('confessions');
           nsp.emit('roomList', getRoomList());
         }, RECONNECT_GRACE));
 
@@ -189,7 +219,7 @@ function register(io) {
         }
       }
 
-      tracker.playerLeft('this-or-that');
+      tracker.playerLeft('confessions');
       nsp.emit('roomList', getRoomList());
     });
   });
@@ -213,7 +243,7 @@ function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
   nsp.to(roomId).emit('playerList', game.getPlayerList());
 
-  tracker.playerJoined('this-or-that');
+  tracker.playerJoined('confessions');
   nsp.emit('roomList', getRoomList());
 }
 
@@ -224,17 +254,10 @@ function buildPayload(game, socketId, roomId, isReconnect) {
     players: game.getPlayerList(),
     owner: game.owner,
     state: game.state,
-    roundNum: game.roundNum,
-    maxRounds: game.maxRounds,
     heatLevel: game.heatLevel,
     isReconnect,
-    currentQuestion: game.state === 'voting' ? {
-      text: game.currentQuestion.text,
-      optionA: game.currentQuestion.optionA,
-      optionB: game.currentQuestion.optionB,
-      category: game.currentQuestion.category,
-      heat: game.currentQuestion.heat,
-    } : null,
+    confessionIndex: game.currentIndex,
+    confessionTotal: game.confessions.length,
   };
 }
 
@@ -243,38 +266,66 @@ function broadcastState(nsp, roomId, game) {
   nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
 }
 
-function startNextRound(nsp, roomId, game) {
-  const roundData = game.nextRound();
-  if (!roundData) {
-    // Game over
+function endSubmitting(nsp, roomId, game) {
+  // Auto-submit empty for anyone who didn't submit
+  game.players.forEach((player) => {
+    if (!game.submissions.has(player.id)) {
+      game.submitConfession(player.id, '(No confession submitted)');
+    }
+  });
+
+  game.buildConfessions();
+
+  if (game.confessions.length === 0) {
     game.state = 'gameOver';
     nsp.to(roomId).emit('gameOver', { results: game.getFinalResults() });
     return;
   }
 
-  nsp.to(roomId).emit('newRound', roundData);
-
-  // Vote timer
-  game.voteTimer = setTimeout(() => {
-    game.voteTimer = null;
-    endVoting(nsp, roomId, game);
-  }, game.voteDuration * 1000);
+  startNextConfession(nsp, roomId, game);
 }
 
-function endVoting(nsp, roomId, game) {
-  const results = game.calculateResults();
-  nsp.to(roomId).emit('roundResults', results);
+function startNextConfession(nsp, roomId, game) {
+  const data = game.nextConfession();
+  if (!data) {
+    nsp.to(roomId).emit('gameOver', { results: game.getFinalResults() });
+    return;
+  }
 
-  // After pause, start next round
-  game.resultTimer = setTimeout(() => {
-    game.resultTimer = null;
-    if (game.roundNum >= game.maxRounds) {
+  // Send confession + player list for guessing
+  const playerChoices = game.getPlayerList().map(p => ({ id: p.id, name: p.name }));
+  nsp.to(roomId).emit('guessPhase', {
+    ...data,
+    players: playerChoices,
+    duration: game.guessDuration,
+  });
+  nsp.to(roomId).emit('phaseChange', { phase: 'guessing', duration: game.guessDuration });
+
+  // Guess timer
+  game.guessTimer = setTimeout(() => {
+    game.guessTimer = null;
+    endGuessing(nsp, roomId, game);
+  }, game.guessDuration * 1000);
+}
+
+function endGuessing(nsp, roomId, game) {
+  const reveal = game.calculateReveal();
+  if (!reveal) return;
+
+  nsp.to(roomId).emit('revealPhase', reveal);
+  nsp.to(roomId).emit('phaseChange', { phase: 'reveal' });
+  nsp.to(roomId).emit('playerList', game.getPlayerList());
+
+  // After pause, next confession or game over
+  game.revealTimer = setTimeout(() => {
+    game.revealTimer = null;
+    if (game.currentIndex >= game.confessions.length - 1) {
       game.state = 'gameOver';
       nsp.to(roomId).emit('gameOver', { results: game.getFinalResults() });
     } else {
-      startNextRound(nsp, roomId, game);
+      startNextConfession(nsp, roomId, game);
     }
-  }, RESULT_PAUSE);
+  }, REVEAL_PAUSE);
 }
 
 module.exports = { register };
