@@ -61,6 +61,17 @@ const games = [
     minPlayers: 3,
     maxPlayers: 16,
     enabled: true
+  },
+  {
+    id: 'dare-roulette',
+    name: 'Dare Roulette',
+    description: 'Spin the wheel, face the dare. Complete it for glory or chicken out in shame.',
+    thumbnail: '/dare-roulette/thumbnail.png',
+    route: '/dare-roulette',
+    type: 'realtime',
+    minPlayers: 2,
+    maxPlayers: 10,
+    enabled: true
   }
 ];
 

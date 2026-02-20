@@ -272,7 +272,7 @@
     // Hot seat label
     const isHotSeat = data.hotSeat === mySocketId;
     $('#hotSeatLabel').textContent = isHotSeat
-      ? '🔥 It's YOUR turn — spill it!'
+      ? "🔥 It's YOUR turn — spill it!"
       : `🔥 ${data.hotSeatName} is in the hot seat`;
 
     if (isHotSeat) {
