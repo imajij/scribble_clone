@@ -1,6 +1,6 @@
 // ========================================
-// ADULTS-ONLY (18+) WORD LIST
-// Strictly NSFW — for the Scribble After Dark game
+// ADULTS-ONLY (18+) WORD LIST — COUPLES EDITION
+// Strictly NSFW — for the Scribble After Dark couples game
 // ========================================
 
 // ----------------------------------------
@@ -9,85 +9,90 @@
 
 const wordCategories = {
 
-  anatomy: [
-    "boobs", "butt", "nipple", "cleavage", "six pack",
-    "thigh gap", "love handles", "beer belly", "happy trail", "camel toe",
-    "boner", "erection", "booty", "moobs", "areola",
-    "bush", "treasure trail", "muffin top", "bikini line", "sideboob",
-    "underboob", "abs", "bulge", "tongue", "belly button"
+  coupleAnatomy: [
+    "boobs", "butt", "nipple", "cleavage", "abs",
+    "inner thigh", "love handles", "happy trail", "collarbone kiss",
+    "neck", "earlobe", "lower back", "hip bones", "booty",
+    "areola", "bikini line", "sideboob", "underboob", "bulge",
+    "tongue", "lips", "belly button", "jawline", "treasure trail", "navel"
   ],
 
-  bedroomActivities: [
+  bedroomTogether: [
     "doggy style", "missionary", "reverse cowgirl", "sixty nine", "spooning",
-    "lap dance", "strip tease", "pole dance", "twerking", "grinding",
-    "skinny dipping", "body shot", "whipped cream", "blindfold", "handcuffs",
-    "role play", "dirty talk", "pillow talk", "morning wood", "walk of shame",
-    "one night stand", "booty call", "quickie", "foreplay", "afterglow",
-    "friends with benefits", "Netflix and chill", "safe word", "tantric", "make out"
+    "lap dance", "strip tease", "grinding", "make out",
+    "skinny dipping", "whipped cream", "blindfold", "handcuffs",
+    "role play", "dirty talk", "pillow talk", "quickie", "foreplay", "afterglow",
+    "morning sex", "tantric", "safe word", "shower together", "breakfast in bed",
+    "body to body", "slow dance", "couples massage", "love making", "Netflix and chill"
   ],
 
-  kinkAndFetish: [
-    "BDSM", "dominatrix", "bondage", "submission", "whip",
+  kinkForTwo: [
+    "BDSM", "dom and sub", "bondage", "submission", "whip",
     "leather", "latex", "corset", "gag ball", "collar",
-    "spanking", "paddle", "riding crop", "ankle cuffs", "blindfolded",
-    "foot fetish", "body worship", "costume play", "hot wax", "rope play",
-    "feather tickle", "ice cube play", "silk ropes", "edging", "dungeon"
+    "spanking", "paddle", "riding crop", "blindfolded",
+    "body worship", "costume play", "hot wax", "rope play",
+    "feather tickle", "ice cube play", "silk ropes", "edging",
+    "role reversal", "power exchange", "sensation play"
   ],
 
-  adultToys: [
-    "vibrator", "dildo", "butt plug", "fuzzy handcuffs", "riding crop",
-    "lingerie", "thong", "g string", "fishnet stockings", "garter belt",
-    "body oil", "massage candle", "love swing", "sleep mask", "feather duster",
-    "nipple clamps", "cock ring", "love beads", "lube", "body paint",
-    "edible underwear", "fuzzy dice", "silk sheets", "mirror ceiling", "stripper pole"
+  couplesToys: [
+    "vibrator", "couples vibrator", "butt plug", "fuzzy handcuffs", "riding crop",
+    "lingerie", "body oil", "massage candle", "love swing", "sleep mask",
+    "feather duster", "nipple clamps", "cock ring", "love beads", "lube",
+    "body paint", "edible underwear", "silk sheets", "remote control toy",
+    "warming gel", "blindfold set", "dice game", "couples card game",
+    "body chocolate", "we-vibe"
   ],
 
-  dirtyInnuendos: [
+  flirtyInnuendos: [
     "banana", "peach", "eggplant", "cherry", "melons",
-    "pearl necklace", "taco", "sausage", "hot dog", "buns",
-    "cucumber", "donuts", "popsicle", "lollipop", "cream pie",
-    "stuffed turkey", "juicy steak", "wet noodle", "banana split", "cherry pop",
-    "meatball sub", "clam", "oyster", "honey pot", "sugar walls"
+    "pearl necklace", "sausage", "buns", "cucumber",
+    "popsicle", "lollipop", "cream pie", "banana split",
+    "honey pot", "cherry pop", "juicy", "tasty",
+    "mouthful", "dessert first", "midnight snack",
+    "main course", "appetizer", "sugar lips", "sweet spot", "love bite"
   ],
 
-  adultEntertainment: [
-    "strip club", "private dance", "pole dancer", "bachelor party", "bachelorette party",
-    "body shots", "beer pong", "spin the bottle", "seven minutes in heaven", "truth or dare",
-    "strip poker", "adult film", "peep show", "burlesque", "go go dancer",
-    "bottle service", "VIP room", "casting couch", "centerfold", "playboy bunny",
-    "cam show", "sugar daddy", "sugar baby", "escort", "call girl"
+  dateNight: [
+    "hotel room", "hot tub", "jacuzzi", "beach at night", "candlelight",
+    "champagne", "room service", "rooftop", "couples retreat", "wine tasting",
+    "sunset", "slow dance", "moonlight", "bubble bath", "fireplace",
+    "weekend getaway", "road trip", "balcony", "penthouse suite", "room key",
+    "do not disturb", "late checkout", "mini bar", "private pool", "stargazing"
   ],
 
-  risqueClothing: [
+  intimateClothing: [
     "thong", "g string", "push up bra", "crotchless panties", "see through",
-    "bikini", "micro bikini", "string bikini", "pasties", "body stocking",
-    "teddy", "babydoll", "negligee", "stiletto heels", "leather pants",
-    "crop top", "booty shorts", "wet t shirt", "tube top", "mesh top",
-    "fishnet", "corset", "garter", "suspenders", "birthday suit"
+    "micro bikini", "pasties", "body stocking",
+    "teddy", "babydoll", "negligee", "stiletto heels",
+    "fishnet", "corset", "garter", "birthday suit",
+    "silk robe", "boxer briefs", "lace bodysuit", "satin slip",
+    "matching set", "kimono robe", "sheer nightgown", "halter top", "boy shorts"
   ],
 
-  naughtyScenarios: [
+  naughtyMoments: [
     "mile high club", "back seat", "elevator quickie", "skinny dipping", "hot tub",
-    "caught in the act", "walk of shame", "hickey", "closet hookup", "pool boy",
-    "hotel room", "champagne room", "jacuzzi", "beach at night", "under the desk",
-    "phone sex", "sexting", "nude selfie", "accidental sext", "wrong chat",
-    "browser history", "incognito mode", "earbuds fell out", "thin walls", "morning after"
+    "caught in the act", "hickey", "hotel hallway", "kitchen counter",
+    "shower steam", "road trip pull over", "balcony at night", "fitting room",
+    "under the blanket", "phone sex", "sexting", "nude selfie",
+    "love letter", "surprise visit", "wake up call",
+    "rain kiss", "car steamy windows", "tent camping", "rooftop midnight", "first time"
   ],
 
-  partyAndDrinking: [
-    "body shots", "keg stand", "beer bong", "toga party", "foam party",
-    "jello shots", "tequila body shot", "wet t shirt contest", "limbo", "dirty dancing",
-    "drunk text", "booty call", "walk of shame", "hangover", "beer goggles",
-    "liquid courage", "last call", "open bar", "bar crawl", "after party",
-    "happy ending", "drunk dial", "designated driver", "pregame", "power hour"
+  romanticVibes: [
+    "love at first sight", "butterflies", "soulmate", "spark", "chemistry",
+    "love language", "pillow fort", "matching pajamas", "inside joke", "pet names",
+    "anniversary", "love note", "forehead kiss", "hand holding", "slow dance",
+    "mixtape", "couple goals", "honeymoon", "proposal", "wedding night",
+    "first kiss", "date night", "long distance", "reunited", "forever person"
   ],
 
-  relationships: [
-    "friends with benefits", "one night stand", "rebound", "catfish", "ghosting",
-    "sugar daddy", "trophy wife", "prenup", "love triangle", "third wheel",
-    "open relationship", "swinger", "cougar", "MILF", "DILF",
-    "sugar mama", "boy toy", "arm candy", "side piece", "hall pass",
-    "speed dating", "blind date", "wingman", "pickup line", "booty text"
+  couplesCode: [
+    "hall pass", "open relationship", "safe word", "Netflix and chill", "spicy night",
+    "round two", "morning after", "walk of fame", "love drunk", "heart eyes",
+    "crush", "desire", "tension", "chemistry", "attraction",
+    "forbidden fruit", "guilty pleasure", "secret fantasy", "wish list", "bucket list",
+    "couple dare", "truth or strip", "spin the bottle", "seven minutes", "no peeking"
   ]
 };
 
@@ -98,27 +103,27 @@ const wordCategories = {
 const WORD_PACKS = {
   classic: {
     label: 'Classic',
-    description: 'Innuendos, anatomy & bedroom basics',
-    categories: ['anatomy', 'bedroomActivities', 'dirtyInnuendos', 'risqueClothing']
+    description: 'Flirty anatomy, bedroom basics & innuendos for couples',
+    categories: ['coupleAnatomy', 'bedroomTogether', 'flirtyInnuendos', 'intimateClothing']
   },
   extreme: {
     label: 'Extreme',
-    description: 'Kink, fetish & adult toys',
-    categories: ['kinkAndFetish', 'adultToys', 'adultEntertainment', 'naughtyScenarios']
+    description: 'Kink, toys & naughty moments — turn up the heat',
+    categories: ['kinkForTwo', 'couplesToys', 'naughtyMoments', 'couplesCode']
   },
   romantic: {
     label: 'Romantic',
-    description: 'Bedroom activities, relationships & clothing',
-    categories: ['bedroomActivities', 'relationships', 'risqueClothing', 'anatomy']
+    description: 'Date nights, romance & intimate clothing',
+    categories: ['dateNight', 'romanticVibes', 'intimateClothing', 'coupleAnatomy']
   },
   party: {
-    label: 'Party',
-    description: 'Drinking games, scenarios & entertainment',
-    categories: ['partyAndDrinking', 'adultEntertainment', 'naughtyScenarios', 'dirtyInnuendos']
+    label: 'Spicy Night',
+    description: 'Everything you need for a hot couples night in',
+    categories: ['naughtyMoments', 'couplesCode', 'flirtyInnuendos', 'dateNight']
   },
   mixed: {
-    label: 'Mixed (All)',
-    description: 'Every category combined',
+    label: 'All In (Everything)',
+    description: 'Every category combined — the ultimate couples mix',
     categories: Object.keys(wordCategories)
   }
 };
