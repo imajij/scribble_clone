@@ -9,6 +9,7 @@
 const TruthLiveGame = require('./truthLive');
 const { getQuestionStats } = require('./questions');
 const tracker = require('../../playerTracker');
+const { saveScore, loadScore } = require('../../redisCache');
 
 const rooms = new Map();
 const playerRooms = new Map();        // socketId → roomId
@@ -195,6 +196,9 @@ function register(io) {
       const wasOwner = game.isOwner(socket.id);
       const playerName = player.name;
 
+      // Save score to Redis before removing player
+      if (sessionId && player.score > 0) saveScore('truth-or-tease', sessionId, player.score);
+
       if (sessionId) game.holdPlayerSeat(socket.id);
 
       game.removePlayer(socket.id);
@@ -256,12 +260,21 @@ function register(io) {
 // Helpers
 // ============================================================
 
-function joinRoom(nsp, socket, roomId, playerName, sessionId) {
+async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
   tracker.playerJoined('truth-or-tease');
+
+  // Restore cached score from Redis
+  if (sessionId) {
+    const cached = await loadScore('truth-or-tease', sessionId);
+    if (cached !== null) {
+      const p = game.players.get(socket.id);
+      if (p && p.score === 0) p.score = cached;
+    }
+  }
   socket.join(roomId);
 
   socket.emit('joinedRoom', buildJoinPayload(game, socket.id, roomId, false));

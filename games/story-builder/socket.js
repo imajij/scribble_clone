@@ -6,6 +6,7 @@
 
 const StoryBuilderGame = require('./storyBuilder');
 const tracker = require('../../playerTracker');
+const { saveScore, loadScore } = require('../../redisCache');
 
 const rooms = new Map();
 const playerRooms = new Map();        // socketId → roomId
@@ -151,6 +152,7 @@ function register(io) {
       const wasOwner = game.isOwner(socket.id);
       const pName = player.name;
 
+      if (sid && player.score > 0) saveScore('story-builder', sid, player.score);
       if (sid) game.holdPlayerSeat(socket.id);
       game.removePlayer(socket.id);
       playerRooms.delete(socket.id);
@@ -218,12 +220,21 @@ function register(io) {
 // Helpers
 // ============================================================
 
-function joinRoom(nsp, socket, roomId, playerName, sessionId) {
+async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   tracker.playerJoined('story-builder');
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
+
+  // Restore cached score from Redis
+  if (sessionId) {
+    const cached = await loadScore('story-builder', sessionId);
+    if (cached !== null) {
+      const p = game.players.get(socket.id);
+      if (p && p.score === 0) p.score = cached;
+    }
+  }
   socket.join(roomId);
 
   socket.emit('joinedRoom', buildPayload(game, socket.id, roomId, false));

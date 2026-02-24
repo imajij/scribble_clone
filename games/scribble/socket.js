@@ -8,6 +8,7 @@
 const Game = require('../../game');
 const { VALID_PACKS, DEFAULT_PACK, getPackList } = require('../../words');
 const tracker = require('../../playerTracker');
+const { saveScore, loadScore } = require('../../redisCache');
 
 // Room management (scoped to this game)
 const rooms = new Map();
@@ -285,6 +286,11 @@ function register(io) {
       const wasOwner = game.isOwner(socket.id);
       const playerName = player.name;
 
+      // Persist score to Redis so it survives beyond the grace period
+      if (sessionId && player.score > 0) {
+        saveScore('scribble', sessionId, player.score);
+      }
+
       if (sessionId) {
         game.holdPlayerSeat(socket.id);
       }
@@ -354,12 +360,24 @@ function register(io) {
 // Helper functions (scribble-scoped)
 // ========================================
 
-function joinRoom(nsp, socket, roomId, playerName, sessionId) {
+async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
   tracker.playerJoined('scribble');
+
+  // Restore cached score from Redis if available
+  if (sessionId) {
+    const cachedScore = await loadScore('scribble', sessionId);
+    if (cachedScore !== null) {
+      const player = game.players.get(socket.id);
+      if (player && player.score === 0) {
+        player.score = cachedScore;
+        console.log(`[scribble] Restored score ${cachedScore} for ${playerName} (${sessionId})`);
+      }
+    }
+  }
 
   socket.join(roomId);
 

@@ -6,6 +6,7 @@
 
 const ConfessionGame = require('./confessionGame');
 const tracker = require('../../playerTracker');
+const { saveScore, loadScore } = require('../../redisCache');
 
 const rooms = new Map();
 const playerRooms = new Map();
@@ -189,6 +190,8 @@ function register(io) {
       if (!player) { playerRooms.delete(socket.id); return; }
 
       if (game.state !== 'waiting') {
+        // Save score to Redis before holding player for reconnect
+        if (player.sessionId && player.score > 0) saveScore('confessions', player.sessionId, player.score);
         game.holdPlayerForReconnect(socket.id);
         playerRooms.delete(socket.id);
 
@@ -229,10 +232,16 @@ function register(io) {
 // Helpers
 // ============================================================
 
-function joinRoom(nsp, socket, roomId, playerName, sessionId) {
+async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const name = (playerName || 'Anon').substring(0, 20).trim() || 'Anon';
   const game = getOrCreateRoom(roomId);
   const player = game.addPlayer(socket.id, name, sessionId);
+
+  // Restore cached score from Redis
+  if (sessionId) {
+    const cached = await loadScore('confessions', sessionId);
+    if (cached !== null && player && player.score === 0) player.score = cached;
+  }
 
   sessionToSocket.set(sessionId, socket.id);
   playerRooms.set(socket.id, roomId);

@@ -240,7 +240,7 @@
     storyContainer.scrollTop = storyContainer.scrollHeight;
   }
 
-  function startTimer(duration) {
+  function startTimer(duration, onExpire) {
     clearInterval(timerInterval);
     let remaining = duration;
     timerFill.style.width = "100%";
@@ -254,7 +254,10 @@
       timerFill.style.width = pct + "%";
       timerText.textContent = remaining + "s";
       if (remaining <= 10) timerFill.classList.add("low");
-      if (remaining <= 0) clearInterval(timerInterval);
+      if (remaining <= 0) {
+        clearInterval(timerInterval);
+        if (typeof onExpire === 'function') onExpire();
+      }
     }, 1000);
   }
 
@@ -484,7 +487,19 @@
 
     const amWriter = data.writer === mySocketId;
     setWriterUI(data.writerName, amWriter);
-    startTimer(data.turnDuration);
+
+    // Auto-submit if it's our turn and timer expires
+    const autoSubmit = amWriter ? () => {
+      if (inputArea.style.display !== 'none' && sentenceInput) {
+        const sentence = sentenceInput.value.trim() || '...';
+        socket.emit('submitSentence', { sentence });
+        inputArea.style.display = 'none';
+        waitingForWriter.style.display = 'block';
+        waitingWriterName.textContent = 'auto-submitted';
+      }
+    } : null;
+
+    startTimer(data.turnDuration, autoSubmit);
   });
 
   socket.on("sentenceAdded", function(data) {

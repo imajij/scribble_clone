@@ -30,6 +30,7 @@
   let hasAnswered = false;
   let hasVoted = false;
   let timerInterval = null;
+  let autoSubmitTimeout = null; // for answer-phase auto-submit
 
   // ── Settings ──
   let selectedRounds = 3;
@@ -228,6 +229,18 @@
     show($('.answer-footer'));
     $('#answerCount').textContent = `0/0 answered`;
     startTimerBar($('#answeringTimer'), data.duration || ANSWERING_DURATION);
+
+    // Auto-submit when answering timer expires
+    if (autoSubmitTimeout) clearTimeout(autoSubmitTimeout);
+    autoSubmitTimeout = setTimeout(() => {
+      autoSubmitTimeout = null;
+      if (!hasAnswered) {
+        const ans = ($('#answerInput').value || '').trim() || '(skipped)';
+        socket.emit('submitAnswer', { answer: ans });
+        hasAnswered = true;
+        $('#submitAnswerBtn').disabled = true;
+      }
+    }, data.duration || ANSWERING_DURATION);
   });
 
   socket.on('answerUpdate', data => {
@@ -236,6 +249,7 @@
 
   socket.on('answerAccepted', () => {
     hasAnswered = true;
+    if (autoSubmitTimeout) { clearTimeout(autoSubmitTimeout); autoSubmitTimeout = null; }
     $('#answerInput').disabled = true;
     $('#submitAnswerBtn').disabled = true;
     hide($('#answerInput'));
