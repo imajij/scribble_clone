@@ -76,6 +76,8 @@ const timerDisplay = document.getElementById('timerDisplay');
 const drawTools = document.getElementById('drawTools');
 const wordChoiceOverlay = document.getElementById('wordChoiceOverlay');
 const wordChoices = document.getElementById('wordChoices');
+const customWordInput = document.getElementById('customWordInput');
+const customWordBtn = document.getElementById('customWordBtn');
 const drawingInfoOverlay = document.getElementById('drawingInfoOverlay');
 const drawingInfoText = document.getElementById('drawingInfoText');
 
@@ -414,6 +416,8 @@ socket.on('choosing', ({ drawer, drawerName, roundNum, maxRounds }) => {
 socket.on('wordChoices', ({ choices }) => {
   wordChoiceOverlay.classList.remove('hidden');
   wordChoices.innerHTML = '';
+  customWordInput.value = '';
+
   choices.forEach(word => {
     const btn = document.createElement('button');
     btn.className = 'word-choice-btn';
@@ -424,6 +428,17 @@ socket.on('wordChoices', ({ choices }) => {
     });
     wordChoices.appendChild(btn);
   });
+
+  // Custom word submission
+  function submitCustomWord() {
+    const custom = customWordInput.value.trim();
+    if (!custom) { customWordInput.focus(); return; }
+    socket.emit('wordChosen', custom);
+    wordChoiceOverlay.classList.add('hidden');
+  }
+
+  customWordBtn.onclick = submitCustomWord;
+  customWordInput.onkeydown = (e) => { if (e.key === 'Enter') submitCustomWord(); };
 });
 
 socket.on('yourWord', ({ word }) => {

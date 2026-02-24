@@ -182,8 +182,12 @@ function register(io) {
       const game = rooms.get(roomId);
       if (!game || game.state !== 'choosing' || game.currentDrawer !== socket.id) return;
 
+      // Sanitize: trim, enforce non-empty, max 50 printable chars
+      const chosen = (typeof word === 'string' ? word : '').trim().replace(/[\r\n\t]/g, ' ').substring(0, 50);
+      if (!chosen) return;
+
       game.clearTimers();
-      const result = game.selectWord(word);
+      const result = game.selectWord(chosen);
 
       nsp.to(roomId).emit('turnStart', {
         drawer: result.drawer,
@@ -193,7 +197,7 @@ function register(io) {
         duration: result.duration
       });
 
-      socket.emit('yourWord', { word });
+      socket.emit('yourWord', { word: chosen });
       nsp.to(roomId).emit('playerList', game.getPlayerList());
 
       startHintTimer(nsp, roomId, game);

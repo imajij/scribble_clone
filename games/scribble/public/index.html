@@ -104,6 +104,13 @@
         <div id="wordChoiceOverlay" class="word-choice-overlay hidden">
           <h3>Choose a word to draw:</h3>
           <div id="wordChoices" class="word-choices"></div>
+          <div class="word-choice-custom">
+            <span class="custom-word-divider">— or type your own —</span>
+            <div class="custom-word-row">
+              <input type="text" id="customWordInput" class="custom-word-input" placeholder="Enter a custom word…" maxlength="50" autocomplete="off" />
+              <button id="customWordBtn" class="custom-word-btn">Draw This</button>
+            </div>
+          </div>
         </div>
 
         <!-- Drawing info overlay -->
