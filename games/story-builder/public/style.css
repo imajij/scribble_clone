@@ -186,7 +186,7 @@ input[type="text"]:focus, textarea:focus { border-color: var(--accent); }
 .waiting-msg { color: var(--text-dim); font-size: .9rem; }
 
 /* ── Game Layout ── */
-.game-layout { display: flex; width: 100%; max-width: 1200px; height: 100vh; gap: 0; }
+.game-layout { display: flex; width: 100%; max-width: 1200px; height: calc(100dvh - var(--navbar-h, 0px)); gap: 0; }
 
 .sidebar {
   width: 260px;

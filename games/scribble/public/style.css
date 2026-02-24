@@ -475,6 +475,14 @@ body {
    GAME LAYOUT
    ======================================== */
 
+/* ── SPA mode: give #game-container a bounded height so children can use height:100% ── */
+#game-container {
+  height: calc(100dvh - var(--navbar-h, 0px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 #gameScreen {
   height: 100%;
   padding: 0;
