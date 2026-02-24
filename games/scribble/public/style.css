@@ -811,6 +811,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  scroll-behavior: smooth;
+  min-height: 0;
 }
 
 .chat-msg {

@@ -149,7 +149,19 @@
     $('#confessionInput').disabled = false;
     $('#submitConfessionBtn').disabled = false;
     if (charCount) charCount.textContent = '0/500';
-    startTimer(duration);
+
+    // Auto-submit confession when timer expires
+    startTimer(duration, () => {
+      const btn = $('#submitConfessionBtn');
+      if (btn && !btn.disabled) {
+        const text = ($('#confessionInput').value || '').trim() || '...';
+        socket.emit('submitConfession', { text });
+        btn.disabled = true;
+        const inp = $('#confessionInput');
+        if (inp) inp.disabled = true;
+        btn.textContent = '✅ Auto-submitted';
+      }
+    });
   });
 
   socket.on('confessionReceived', () => {
@@ -194,7 +206,14 @@
     });
 
     $('#guessStatus').textContent = '';
-    startTimer(duration);
+
+    // Auto-submit guess when timer expires (pick first available option)
+    startTimer(duration, () => {
+      if (!myGuess) {
+        const firstBtn = $('#guessGrid .guess-btn:not(.is-me):not([disabled])');
+        if (firstBtn) firstBtn.click();
+      }
+    });
   });
 
   socket.on('guessReceived', () => {
@@ -337,7 +356,7 @@
   // Timer
   // ═══════════════════════════════════════════
 
-  function startTimer(seconds) {
+  function startTimer(seconds, onExpire) {
     clearTimer();
     let remaining = seconds;
     const display = $('#timerDisplay');
@@ -348,7 +367,10 @@
       remaining--;
       display.textContent = Math.max(0, remaining);
       if (remaining <= 5) display.classList.add('urgent');
-      if (remaining <= 0) clearTimer();
+      if (remaining <= 0) {
+        clearTimer();
+        if (typeof onExpire === 'function') onExpire();
+      }
     }, 1000);
   }
 

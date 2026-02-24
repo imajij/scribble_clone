@@ -294,7 +294,19 @@
       show($('#waitingForAnswer'));
     }
 
-    startTimer(data.duration || 30);
+    // Auto-submit when timer expires (hot seat player only)
+    const autoSubmitAnswer = isHotSeat ? () => {
+      const btn = $('#submitAnswerBtn');
+      if (btn && !btn.disabled) {
+        const ans = ($('#answerInput').value || '').trim() || '(no answer)';
+        socket.emit('submitAnswer', ans);
+        btn.disabled = true;
+        const inp = $('#answerInput');
+        if (inp) inp.disabled = true;
+      }
+    } : null;
+
+    startTimer(data.duration || 30, autoSubmitAnswer);
   });
 
   socket.on('answerRevealed', (data) => {
@@ -523,13 +535,17 @@
   }
 
   // ---------- Timer ----------
-  function startTimer(seconds) {
+  function startTimer(seconds, onExpire) {
     clearTimer();
     timerValue = Math.ceil(seconds);
     updateTimerDisplay();
     timerInterval = setInterval(() => {
       timerValue--;
-      if (timerValue <= 0) { timerValue = 0; clearTimer(); }
+      if (timerValue <= 0) {
+        timerValue = 0;
+        clearTimer();
+        if (typeof onExpire === 'function') onExpire();
+      }
       updateTimerDisplay();
     }, 1000);
   }
