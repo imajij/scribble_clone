@@ -83,6 +83,28 @@ const games = [
     minPlayers: 2,
     maxPlayers: 8,
     enabled: true
+  },
+  {
+    id: 'couple-mode',
+    name: 'Couple Mode 💑',
+    description: 'Flirty chaos for couples — Who\'s More Likely, Draw Your Partner, Red Flags and more.',
+    thumbnail: '/couple-mode/thumbnail.png',
+    route: '/couple-game',
+    type: 'realtime',
+    minPlayers: 2,
+    maxPlayers: 10,
+    enabled: true
+  },
+  {
+    id: 'bachelor-mode',
+    name: 'Bachelor Mode 🍻',
+    description: 'Absolute brainrot — Sus Drawing, Rate the Rizz, Lie Detector and more unhinged chaos.',
+    thumbnail: '/bachelor-mode/thumbnail.png',
+    route: '/bachelor',
+    type: 'realtime',
+    minPlayers: 2,
+    maxPlayers: 10,
+    enabled: true
   }
 ];
 

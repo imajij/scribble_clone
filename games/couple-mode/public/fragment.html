@@ -1,0 +1,234 @@
+<!-- COUPLE MODE — Fragment -->
+
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-wrap">
+    <div class="lobby-hero">
+      <div class="game-badge">💑</div>
+      <h1 class="game-title">Couple Mode</h1>
+      <p class="game-subtitle">Chaos for couples 🔥 Flirty · Awkward · Unhinged</p>
+    </div>
+    <div class="lobby-card">
+      <div class="input-group">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" placeholder="Enter your name..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="lobby-actions">
+        <button id="createRoomBtn" class="btn btn-couple">💑 Create Room</button>
+        <div class="divider"><span>OR</span></div>
+        <div class="join-row">
+          <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="6" class="room-code-input">
+          <button id="joinRoomBtn" class="btn btn-outline">Join</button>
+        </div>
+      </div>
+    </div>
+    <div id="activeRooms" class="active-rooms hidden">
+      <h3>💞 Active Rooms</h3>
+      <div id="roomListContainer" class="room-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting Room -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-wrap">
+    <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+    <p class="share-hint">Share this code with everyone 💌</p>
+    <div id="waitingPlayers" class="player-grid"></div>
+    <div class="waiting-actions">
+      <button id="startGameBtn" class="btn btn-couple btn-lg" disabled>Need 2+ players</button>
+      <p class="player-count">Players: <span id="playerCount">0</span>/10</p>
+    </div>
+  </div>
+</div>
+
+<!-- Mini-game Intro Card -->
+<div id="introScreen" class="screen hidden">
+  <div class="intro-wrap">
+    <div class="intro-emoji" id="introEmoji">🎮</div>
+    <div class="intro-round" id="introRound">Round 1 / 6</div>
+    <div class="intro-name" id="introName">Loading...</div>
+    <div class="intro-bar"><div class="intro-progress" id="introProgress"></div></div>
+  </div>
+</div>
+
+<!-- Game HUD (persistent during game) -->
+<div id="gameHud" class="game-hud hidden">
+  <div class="hud-left">
+    <span id="hudMiniGame">—</span>
+    <span id="hudRound" class="hud-round">1/6</span>
+  </div>
+  <div class="hud-timer-wrap">
+    <div class="hud-timer" id="hudTimer">—</div>
+  </div>
+  <div class="hud-right">
+    <span class="hud-chaos-label">🔥</span>
+  </div>
+</div>
+
+<!-- Main Game Area -->
+<div id="gameArea" class="game-area hidden">
+  <div class="game-layout">
+
+    <!-- Scoreboard sidebar -->
+    <div class="score-panel">
+      <div class="score-title">Scoreboard</div>
+      <div id="scoreList" class="score-list"></div>
+    </div>
+
+    <!-- Center stage — mini-game content swaps here -->
+    <div class="center-stage">
+
+      <!-- WML: Who's More Likely To -->
+      <div id="wmlScreen" class="minigame-screen hidden">
+        <div class="mg-header">🗳️ Who's More Likely To...</div>
+        <div class="question-bubble" id="wmlQuestion">Loading...</div>
+        <div class="wml-players" id="wmlPlayers"><!-- player vote buttons injected --></div>
+        <p class="vote-hint" id="wmlVoteHint">Tap a player!</p>
+        <div class="vote-progress">
+          <span id="wmlProgress">0/0 voted</span>
+        </div>
+      </div>
+
+      <!-- WML Result -->
+      <div id="wmlResultScreen" class="minigame-screen hidden">
+        <div class="mg-header">🗳️ The verdict is in...</div>
+        <div class="question-bubble" id="wmlResultQ"></div>
+        <div id="wmlResultBars" class="result-bars"></div>
+        <div class="result-winner" id="wmlWinner"></div>
+      </div>
+
+      <!-- RFGF: Red Flag or Green Flag -->
+      <div id="rfgfScreen" class="minigame-screen hidden">
+        <div class="mg-header">🚩 Red Flag or Green Flag?</div>
+        <div class="scenario-card" id="rfgfScenario">Loading...</div>
+        <div class="rfgf-buttons">
+          <button id="rfgfRedBtn" class="btn btn-red-flag">🟥 Red Flag</button>
+          <button id="rfgfGreenBtn" class="btn btn-green-flag">🟩 Green Flag</button>
+        </div>
+        <p class="vote-hint" id="rfgfVoteHint">Vote!</p>
+        <div class="vote-progress"><span id="rfgfProgress">0/0 voted</span></div>
+      </div>
+
+      <!-- RFGF Result -->
+      <div id="rfgfResultScreen" class="minigame-screen hidden">
+        <div class="mg-header">🚩 The community has spoken</div>
+        <div class="scenario-card" id="rfgfResultScenario"></div>
+        <div class="rfgf-result-bars" id="rfgfResultBars"></div>
+        <div class="result-winner" id="rfgfVerdict"></div>
+      </div>
+
+      <!-- FTS: Finish The Sentence -->
+      <div id="ftsScreen" class="minigame-screen hidden">
+        <div class="mg-header">✍️ Finish The Sentence</div>
+        <div class="fts-template" id="ftsTemplate">Loading...</div>
+        <input type="text" id="ftsInput" class="text-input" placeholder="Complete it..." maxlength="200" autocomplete="off">
+        <button id="ftsSubmitBtn" class="btn btn-couple">Submit 🚀</button>
+        <div class="vote-progress"><span id="ftsProgress">0/0 submitted</span></div>
+      </div>
+
+      <!-- FTS Reveal -->
+      <div id="ftsRevealScreen" class="minigame-screen hidden">
+        <div class="mg-header">✍️ Anonymous Answers</div>
+        <div class="fts-template-small" id="ftsRevealTemplate"></div>
+        <div id="ftsRevealList" class="reveal-list"></div>
+      </div>
+
+      <!-- TOS: Truth or Skip -->
+      <div id="tosScreen" class="minigame-screen hidden">
+        <div class="mg-header">😬 Truth or Skip</div>
+        <div class="tos-turn-label">It's <span id="tosTurnName">???</span>'s turn</div>
+        <div class="question-bubble" id="tosQuestion">Loading...</div>
+        <div id="tosAnswerArea" class="hidden">
+          <input type="text" id="tosInput" class="text-input" placeholder="Answer honestly..." maxlength="300" autocomplete="off">
+          <div class="tos-actions">
+            <button id="tosAnswerBtn" class="btn btn-couple">Answer +80 pts</button>
+            <button id="tosSkipBtn" class="btn btn-danger">Skip -20 pts 😬</button>
+          </div>
+        </div>
+        <p id="tosWaitMsg" class="wait-msg hidden">Waiting for them to answer...</p>
+      </div>
+
+      <!-- TOS Reveal -->
+      <div id="tosRevealScreen" class="minigame-screen hidden">
+        <div class="mg-header">😬 Truth or Skip — Results</div>
+        <div id="tosRevealList" class="reveal-list"></div>
+      </div>
+
+      <!-- TELEPATHY: Couple Telepathy -->
+      <div id="telepathyScreen" class="minigame-screen hidden">
+        <div class="mg-header">🔮 Couple Telepathy</div>
+        <p class="telepathy-hint">Answer secretly — no peeking! 👀</p>
+        <div class="question-bubble" id="telepathyQuestion">Loading...</div>
+        <input type="text" id="telepathyInput" class="text-input" placeholder="Your answer..." maxlength="100" autocomplete="off">
+        <button id="telepathySubmitBtn" class="btn btn-couple">Submit 🔮</button>
+        <div class="vote-progress"><span id="telepathyProgress">0/0 answered</span></div>
+      </div>
+
+      <!-- Telepathy Reveal -->
+      <div id="telepathyRevealScreen" class="minigame-screen hidden">
+        <div class="mg-header">🔮 Telepathy Results</div>
+        <div class="question-bubble" id="telepathyRevealQ"></div>
+        <div id="telepathyRevealList" class="reveal-list"></div>
+        <div class="result-winner" id="telepathyMatchResult"></div>
+      </div>
+
+      <!-- DRAW: Draw Your Partner -->
+      <div id="drawScreen" class="minigame-screen hidden">
+        <div class="mg-header">🎨 Draw Your Partner From Memory</div>
+        <div id="drawInstructions" class="draw-instructions hidden"></div>
+        <div class="canvas-wrap">
+          <canvas id="coupleCanvas"></canvas>
+        </div>
+        <div id="drawTools" class="draw-tools hidden">
+          <div class="color-palette" id="colorPalette"></div>
+          <div class="brush-sizes">
+            <button class="size-btn active" data-size="4">S</button>
+            <button class="size-btn" data-size="10">M</button>
+            <button class="size-btn" data-size="20">L</button>
+          </div>
+          <button id="clearCanvasBtn" class="btn btn-sm btn-danger">🗑️ Clear</button>
+        </div>
+        <p id="drawWatcher" class="watch-msg hidden">Watch them draw... 👀</p>
+      </div>
+
+      <!-- Draw Guessing -->
+      <div id="drawGuessScreen" class="minigame-screen hidden">
+        <div class="mg-header">🎨 What is this masterpiece?</div>
+        <div class="caption-grid" id="captionGrid"><!-- caption buttons injected --></div>
+        <p class="vote-hint" id="drawGuessHint">Pick a caption!</p>
+        <div class="vote-progress"><span id="drawGuessProgress">0/0 voted</span></div>
+      </div>
+
+      <!-- Draw Reveal -->
+      <div id="drawRevealScreen" class="minigame-screen hidden">
+        <div class="mg-header">🎨 The Verdict</div>
+        <div class="roast-card" id="roastCard"></div>
+        <div id="drawRevealWinner" class="result-winner"></div>
+      </div>
+
+    </div>
+
+    <!-- Chat panel -->
+    <div class="chat-panel">
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="React..." maxlength="200" autocomplete="off">
+        <button id="sendBtn" class="btn btn-send">➤</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="game-over-card">
+    <div class="game-over-emoji">💑</div>
+    <h1>Game Over!</h1>
+    <div class="chaos-final" id="chaosFinalScore"></div>
+    <div id="finalScores" class="final-scores"></div>
+    <div id="titleCards" class="title-cards"></div>
+    <button id="playAgainBtn" class="btn btn-couple btn-lg">Play Again 🔄</button>
+  </div>
+</div>

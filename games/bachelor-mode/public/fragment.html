@@ -1,0 +1,294 @@
+<!-- BACHELOR MODE — Fragment HTML -->
+<div id="bach-root">
+
+  <!-- ── Lobby ── -->
+  <div id="lobbyScreen" class="screen">
+    <div class="bach-header">
+      <div class="bach-logo">🍻</div>
+      <h1 class="bach-title">Bachelor Mode</h1>
+      <p class="bach-subtitle">Absolute brainrot guaranteed</p>
+    </div>
+    <div class="lobby-card">
+      <input id="playerName" type="text" class="input-field" placeholder="Your name" maxlength="20" autocomplete="off" />
+      <div class="lobby-actions">
+        <button id="createRoomBtn" class="btn btn-bach">Create Room</button>
+        <div class="join-row">
+          <input id="roomCodeInput" type="text" class="input-field input-code" placeholder="Room code" maxlength="6" autocomplete="off" />
+          <button id="joinRoomBtn" class="btn btn-outline-bach">Join</button>
+        </div>
+      </div>
+      <div id="activeRooms" class="hidden">
+        <div class="active-rooms-label">Active Rooms</div>
+        <div id="roomListContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Waiting Room ── -->
+  <div id="waitingScreen" class="screen hidden">
+    <div class="waiting-header">
+      <div class="room-code-badge">Room: <span id="roomCodeDisplay">----</span></div>
+      <div class="player-count-badge"><span id="playerCount">1</span> players</div>
+    </div>
+    <div id="waitingPlayers" class="player-grid"></div>
+    <div class="waiting-footer">
+      <div class="waiting-hint">Share the room code to invite friends!</div>
+      <button id="startGameBtn" class="btn btn-bach btn-lg" disabled>Need 2+ players</button>
+    </div>
+    <div class="chat-panel">
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-row">
+        <input id="chatInput" class="input-field chat-input" type="text" placeholder="Chat..." maxlength="200" />
+        <button id="sendBtn" class="btn btn-sm btn-outline-bach">→</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Mini-game Intro Card ── -->
+  <div id="introScreen" class="screen hidden">
+    <div class="intro-card">
+      <div id="introEmoji" class="intro-emoji">🎮</div>
+      <div id="introName"  class="intro-name">Loading...</div>
+      <div id="introRound" class="intro-round">Round 1/6</div>
+      <div class="intro-bar-wrap">
+        <div id="introProgress" class="intro-progress-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Persistent HUD ── -->
+  <div id="gameHud" class="game-hud hidden">
+    <div class="hud-left">
+      <span id="hudMiniGame" class="hud-minigame">🎮 Game</span>
+      <span id="hudRound" class="hud-round">1/6</span>
+    </div>
+    <div class="hud-center">
+      <div class="chaos-hud-wrap">
+        <span class="chaos-label">CHAOS</span>
+        <div class="chaos-hud">
+          <div id="chaosFill" class="chaos-fill"></div>
+        </div>
+        <span id="chaosTierLabel" class="chaos-tier">Calm</span>
+      </div>
+    </div>
+    <div class="hud-right">
+      <span id="hudTimer" class="hud-timer">--</span>
+      <span class="hud-timer-s">s</span>
+    </div>
+  </div>
+
+  <!-- ── Game Area ── -->
+  <div id="gameArea" class="hidden">
+
+    <!-- Score sidebar -->
+    <div id="scoreSidebar" class="score-sidebar">
+      <div class="score-sidebar-title">🏆 Leaderboard</div>
+      <div id="scoreList" class="score-list"></div>
+    </div>
+
+    <!-- ── Sus Drawing ── -->
+    <div id="susDrawScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">🖊️ Sus Drawing</div>
+        <div id="susDrawStatus" class="mg-subtitle">Someone is drawing...</div>
+      </div>
+      <div class="canvas-area">
+        <canvas id="bachCanvas"></canvas>
+      </div>
+      <div id="susDrawTools" class="draw-tools hidden">
+        <div id="bachColorPalette" class="color-palette"></div>
+        <div class="size-btns">
+          <button class="size-btn active" data-size="4">S</button>
+          <button class="size-btn" data-size="10">M</button>
+          <button class="size-btn" data-size="20">L</button>
+        </div>
+        <button id="bachClearBtn" class="btn btn-sm btn-outline-bach">🔄 Clear</button>
+      </div>
+      <div id="susCaptionArea" class="hidden">
+        <div class="mg-subtitle">What is this?? Caption it!</div>
+        <textarea id="susCaptionInput" class="textarea-field" rows="2" maxlength="100" placeholder="Your caption..."></textarea>
+        <button id="susCaptionSubmitBtn" class="btn btn-bach">Submit Caption 💬</button>
+      </div>
+      <div id="susWatcherMsg" class="hidden mg-subtitle">👀 Watching...</div>
+    </div>
+
+    <!-- ── Sus Caption Vote ── -->
+    <div id="susCaptionVoteScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">💬 Best Caption Wins</div>
+      </div>
+      <div class="mini-canvas-preview">
+        <canvas id="bachCanvasPreview" class="canvas-static"></canvas>
+      </div>
+      <div class="vote-instruction">Vote for the funniest caption:</div>
+      <div id="susCaptionVoteList" class="submission-vote-list"></div>
+      <div class="vote-progress"><span id="susCaptionProgress">0/? voted</span></div>
+    </div>
+
+    <!-- ── Sus Reveal ── -->
+    <div id="susRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">🔍 It was actually...</div>
+        <div id="susActualPrompt" class="mg-subtitle reveal-prompt"></div>
+      </div>
+      <div id="susRevealList" class="reveal-list"></div>
+      <div class="winner-announce" id="susWinner"></div>
+    </div>
+
+    <!-- ── Caption This Disaster ── -->
+    <div id="captionScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">💬 Caption This Disaster</div>
+      </div>
+      <div class="scenario-card">
+        <div id="captionScene" class="scenario-text"></div>
+        <div id="captionLabel" class="scenario-label"></div>
+      </div>
+      <textarea id="captionInput" class="textarea-field" rows="2" maxlength="150" placeholder="Your caption..."></textarea>
+      <button id="captionSubmitBtn" class="btn btn-bach">Submit 🔥</button>
+      <div class="submit-progress"><span id="captionProgress">0/? submitted</span></div>
+    </div>
+
+    <!-- ── Caption Vote ── -->
+    <div id="captionVoteScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🏆 Vote for the best!</div></div>
+      <div id="captionVoteList" class="submission-vote-list"></div>
+      <div class="vote-progress"><span id="captionVoteProgress">0/? voted</span></div>
+    </div>
+
+    <!-- ── Caption Reveal ── -->
+    <div id="captionRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🔍 Results</div></div>
+      <div id="captionRevealScene" class="scenario-text small"></div>
+      <div id="captionRevealList" class="reveal-list"></div>
+      <div class="winner-announce" id="captionWinner"></div>
+    </div>
+
+    <!-- ── Excuse Generator ── -->
+    <div id="excuseScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🤥 Excuse Generator</div></div>
+      <div class="prompt-card"><div id="excusePrompt" class="prompt-text"></div></div>
+      <textarea id="excuseInput" class="textarea-field" rows="3" maxlength="200" placeholder="Your excuse..."></textarea>
+      <button id="excuseSubmitBtn" class="btn btn-bach">Submit 🤞</button>
+      <div class="submit-progress"><span id="excuseProgress">0/? submitted</span></div>
+    </div>
+
+    <!-- ── Excuse Vote ── -->
+    <div id="excuseVoteScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🗳️ Most believable?</div></div>
+      <div id="excuseVoteList" class="submission-vote-list"></div>
+      <div class="vote-progress"><span id="excuseVoteProgress">0/? voted</span></div>
+    </div>
+
+    <!-- ── Excuse Reveal ── -->
+    <div id="excuseRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🔍 The results are in</div></div>
+      <div id="excuseRevealPrompt" class="prompt-text small"></div>
+      <div id="excuseRevealList" class="reveal-list"></div>
+      <div class="winner-announce" id="excuseWinner"></div>
+    </div>
+
+    <!-- ── Rate the Rizz ── -->
+    <div id="rizzScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🔥 Rate the Rizz</div></div>
+      <div class="prompt-card"><div id="rizzPrompt" class="prompt-text"></div></div>
+      <textarea id="rizzInput" class="textarea-field" rows="3" maxlength="200" placeholder="Show your rizz..."></textarea>
+      <button id="rizzSubmitBtn" class="btn btn-bach">Submit 🔥</button>
+      <div class="submit-progress"><span id="rizzProgress">0/? submitted</span></div>
+    </div>
+
+    <!-- ── Rizz Rate ── -->
+    <div id="rizzRateScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">⭐ Rate these openers!</div></div>
+      <div id="rizzRateList" class="rizz-rate-list"></div>
+    </div>
+
+    <!-- ── Rizz Reveal ── -->
+    <div id="rizzRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🏆 Rizz Rankings</div></div>
+      <div id="rizzRevealList" class="reveal-list rizz-reveal-list"></div>
+      <div class="winner-announce" id="rizzWinner"></div>
+    </div>
+
+    <!-- ── Lie Detector — Speaker ── -->
+    <div id="lieScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">🤔 Lie Detector</div>
+        <div id="lieSpeakerLabel" class="mg-subtitle"></div>
+      </div>
+      <div class="prompt-card"><div id="liePrompt" class="prompt-text"></div></div>
+      <div id="lieSpeakerArea" class="hidden">
+        <textarea id="lieInput" class="textarea-field" rows="3" maxlength="200" placeholder="Your statement..."></textarea>
+        <div class="lie-toggle-row">
+          <button id="lieRealBtn" class="btn btn-outline-bach">✅ It's TRUE</button>
+          <button id="lieLieBtn"  class="btn btn-outline-bach">🤥 It's a LIE</button>
+        </div>
+        <div id="lieSubmitStatus" class="hidden mg-subtitle">Statement locked in 🔒</div>
+      </div>
+      <div id="lieWatchArea" class="hidden">
+        <div class="mg-subtitle">Is this real or cap?</div>
+      </div>
+    </div>
+
+    <!-- ── Lie Vote ── -->
+    <div id="lieVoteScreen" class="minigame-screen hidden">
+      <div class="mg-header">
+        <div class="mg-prompt-label">🕵️ Real or Cap?</div>
+        <div id="lieVoteSpeaker" class="mg-subtitle"></div>
+      </div>
+      <div class="statement-card">
+        <div id="lieStatement" class="statement-text"></div>
+      </div>
+      <div id="lieVoteBtns" class="lie-vote-btns">
+        <button class="btn btn-lie-real" data-verdict="real">✅ REAL</button>
+        <button class="btn btn-lie-cap"  data-verdict="lie">🤥 CAP</button>
+      </div>
+      <div class="vote-progress"><span id="lieVoteProgress">0/? voted</span></div>
+    </div>
+
+    <!-- ── Lie Reveal ── -->
+    <div id="lieRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div id="lieRevealVerdict" class="mg-prompt-label"></div></div>
+      <div id="lieRevealText" class="statement-text reveal-prompt"></div>
+      <div id="lieRevealStats" class="reveal-stats"></div>
+    </div>
+
+    <!-- ── Drunk Logic ── -->
+    <div id="drunkScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🍺 Drunk Logic</div></div>
+      <div class="prompt-card"><div id="drunkPrompt" class="prompt-text"></div></div>
+      <textarea id="drunkInput" class="textarea-field" rows="3" maxlength="250" placeholder="Defend this with your life..."></textarea>
+      <button id="drunkSubmitBtn" class="btn btn-bach">Submit 🍺</button>
+      <div class="submit-progress"><span id="drunkProgress">0/? submitted</span></div>
+    </div>
+
+    <!-- ── Drunk Vote ── -->
+    <div id="drunkVoteScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🗳️ Most convincing drunk logic?</div></div>
+      <div id="drunkVoteList" class="submission-vote-list"></div>
+      <div class="vote-progress"><span id="drunkVoteProgress">0/? voted</span></div>
+    </div>
+
+    <!-- ── Drunk Reveal ── -->
+    <div id="drunkRevealScreen" class="minigame-screen hidden">
+      <div class="mg-header"><div class="mg-prompt-label">🏆 The Most Unhinged Takes</div></div>
+      <div id="drunkRevealPrompt" class="prompt-text small"></div>
+      <div id="drunkRevealList" class="reveal-list"></div>
+      <div class="winner-announce" id="drunkWinner"></div>
+    </div>
+
+  </div><!-- /#gameArea -->
+
+  <!-- ── Game Over Overlay ── -->
+  <div id="gameOverOverlay" class="game-over-overlay hidden">
+    <div class="game-over-card">
+      <div class="game-over-emoji">🍻</div>
+      <h2 class="game-over-title">That's a wrap!</h2>
+      <div id="chaosFinalScore" class="chaos-final"></div>
+      <div id="finalScores" class="final-scores"></div>
+      <div id="titleCards" class="title-cards"></div>
+      <button id="playAgainBtn" class="btn btn-bach btn-lg">Play Again 🔄</button>
+    </div>
+  </div>
+
+</div><!-- /#bach-root -->

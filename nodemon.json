@@ -1,0 +1,20 @@
+{
+  "watch": [
+    "server.js",
+    "gameRegistry.js",
+    "game.js",
+    "playerTracker.js",
+    "redisCache.js",
+    "words.js",
+    "games/**/socket.js",
+    "games/**/*.js",
+    "!games/**/public/**"
+  ],
+  "ignore": [
+    "games/**/public/**",
+    "public/**",
+    "node_modules/**"
+  ],
+  "ext": "js,json",
+  "delay": 500
+}

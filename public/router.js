@@ -64,6 +64,20 @@ const ROUTES = {
     icon: '\u{1F92B}',
     color: '#22c55e',
   },
+  '/couple-game': {
+    gameId: 'couple-mode',
+    assetBase: '/couple-game',
+    scripts: ['canvas.js', 'app.js'],
+    icon: '\u{1F491}',
+    color: '#ff6b9d',
+  },
+  '/bachelor': {
+    gameId: 'bachelor-mode',
+    assetBase: '/bachelor',
+    scripts: ['canvas.js', 'app.js'],
+    icon: '\u{1F37B}',
+    color: '#a855f7',
+  },
 };
 
 // ── Map game-id → SPA route (for home page card links) ──
@@ -102,6 +116,8 @@ function navigate(path, pushState) {
 
   if (path === '/') {
     loadHome();
+  } else if (path === '/couple') {
+    loadCoupleLobby();
   } else if (ROUTES[path]) {
     loadGame(path);
   } else {
@@ -226,6 +242,7 @@ var ICONS = {
   'confessions':    '\u{1F92B}',
   'dare-roulette':  '\u{1F3B0}',
   'story-builder':  '\u{1F4DD}',
+  'couple-mode':    '\u{1F491}',
 };
 
 var COLORS = {
@@ -236,33 +253,63 @@ var COLORS = {
   'confessions':    '#22c55e',
   'dare-roulette':  '#f59e0b',
   'story-builder':  '#7f5af0',
+  'couple-mode':    '#ff6b9d',
 };
 
 function loadHome() {
   document.title = 'After Dark Games \u{1F319}';
-
   container.innerHTML =
-    '<div class="home-hero">' +
-      '<h1 class="logo">\u{1F319} After Dark Games</h1>' +
-      '<p class="tagline">Intimate games for couples \u2014 just the two of you.</p>' +
-    '</div>' +
-    '<div class="home-grid" id="homeGrid">' +
-      '<div class="spa-loading">Loading games\u2026</div>' +
-    '</div>' +
-    '<div class="home-footer">18+ only \u00B7 Made for couples \u00B7 Built with \u2764\uFE0F</div>';
+    '<div class="mode-selector">' +
+      '<div class="mode-hero">' +
+        '<h1 class="logo">\u{1F319} After Dark Games</h1>' +
+        '<p class="tagline">Pick your vibe for the night</p>' +
+      '</div>' +
+      '<div class="mode-cards">' +
+        '<a href="/couple" class="mode-card mode-couple" data-spa>' +
+          '<div class="mode-icon">\u{1F491}</div>' +
+          '<h2>Couple Mode</h2>' +
+          '<p>Intimate games for couples &amp; groups</p>' +
+          '<div class="mode-game-list">Scribble \u00B7 Truth \u00B7 Confessions \u00B7 +5 more</div>' +
+        '</a>' +
+        '<a href="/bachelor" class="mode-card mode-bachelor" data-spa>' +
+          '<div class="mode-icon">\u{1F37B}</div>' +
+          '<h2>Bachelor Mode</h2>' +
+          '<p>Sus drawings, rizz checks &amp; chaos</p>' +
+          '<div class="mode-game-list">Sus Draw \u00B7 Rizz Rating \u00B7 Lie Detector \u00B7 +3 more</div>' +
+        '</a>' +
+      '</div>' +
+    '</div>';
+}
+
+// ============================================================
+// Couple lobby (game hub)
+// ============================================================
+
+var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder', 'couple-mode'];
+
+function loadCoupleLobby() {
+  document.title = 'Couple Mode \u{1F491} | After Dark Games';
+  container.innerHTML =
+    '<div class="hub-wrap">' +
+      '<div class="hub-hero">' +
+        '<a href="/" class="hub-back" data-spa>\u2190 Home</a>' +
+        '<div class="hub-icon">\u{1F491}</div>' +
+        '<h1 class="hub-title">Couple Mode</h1>' +
+        '<p class="hub-sub">Choose a game for tonight</p>' +
+      '</div>' +
+      '<div class="home-grid" id="homeGrid"></div>' +
+    '</div>';
 
   fetch('/api/games')
     .then(function(res) { return res.json(); })
     .then(function(games) {
       var grid = document.getElementById('homeGrid');
       if (!grid) return;
-      grid.innerHTML = '';
-
-      games.forEach(function(game) {
+      var coupleGames = games.filter(function(g) { return COUPLE_GAME_IDS.indexOf(g.id) !== -1; });
+      coupleGames.forEach(function(game) {
         var icon  = ICONS[game.id] || '\u{1F3AE}';
         var color = COLORS[game.id] || '#a855f7';
         var spaRoute = ID_TO_ROUTE[game.id];
-
         var card = document.createElement('a');
         if (spaRoute) {
           card.href = spaRoute;
@@ -284,7 +331,6 @@ function loadHome() {
             '<span class="online-dot"></span>' +
             '<span class="online-count">0 online</span>' +
           '</div>';
-
         grid.appendChild(card);
       });
     })
@@ -292,8 +338,6 @@ function loadHome() {
       var grid = document.getElementById('homeGrid');
       if (grid) grid.innerHTML = '<p class="spa-loading">Could not load games. Try refreshing.</p>';
     });
-
-  // Set up live player count tracking
   setupPlatformSocket();
 }
 

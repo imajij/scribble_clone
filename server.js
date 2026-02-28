@@ -112,6 +112,29 @@ tracker.on('update', (status) => {
 });
 
 // ============================================================
+// 6. Hot-reload watcher (dev only)
+// ============================================================
+
+if (process.env.NODE_ENV !== 'production') {
+  const chokidar = require('chokidar');
+  const watchPaths = [
+    path.join(__dirname, 'public'),
+    path.join(__dirname, 'games', '**', 'public'),
+  ];
+  chokidar.watch(watchPaths, { ignoreInitial: true, usePolling: false })
+    .on('change', (file) => {
+      const rel = path.relative(__dirname, file);
+      console.log(`  ♻️  Static file changed: ${rel} — reloading clients`);
+      platformNsp.emit('hotReload', { file: rel });
+    })
+    .on('add', (file) => {
+      const rel = path.relative(__dirname, file);
+      platformNsp.emit('hotReload', { file: rel });
+    });
+  console.log('  🔥 Hot-reload watcher active (static files)');
+}
+
+// ============================================================
 // Start
 // ============================================================
 
