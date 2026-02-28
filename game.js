@@ -29,6 +29,12 @@ class Game {
     // Custom word mode
     this.customWords = [];           // sanitized custom word list (max 10)
     this.useCustomWords = false;     // whether custom mode is active
+
+    // Game mode — set by socket.js after construction
+    this.mode = 'scribble';          // 'scribble' | 'bachelor'
+    this.modeHandler = null;         // ref to the loaded mode module
+    this.nsp = null;                 // Socket.IO namespace (set by socket.js)
+    this._rooms = null;              // ref to the rooms Map (set by socket.js)
   }
 
   /**

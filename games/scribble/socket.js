@@ -1,14 +1,20 @@
 // ========================================
 // SCRIBBLE AFTER DARK — Socket.IO handler
 // ========================================
-// Extracted from the original monolithic server.js.
-// Receives the shared `io` instance and attaches all scribble-specific
-// socket events under the `/scribble` namespace.
+// Thin router: all game-logic events are delegated to the active mode handler.
+// Infrastructure (join, reconnect, disconnect) stays here.
 
 const Game = require('../../game');
 const { VALID_PACKS, DEFAULT_PACK, getPackList } = require('../../words');
 const tracker = require('../../playerTracker');
 const { saveScore, loadScore } = require('../../redisCache');
+
+const scribbleMode = require('./modes/scribbleMode');
+const bachelorMode = require('./modes/bachelorMode');
+
+const MODES = { scribble: scribbleMode, bachelor: bachelorMode };
+const VALID_MODES = Object.keys(MODES);
+const DEFAULT_MODE = 'scribble';
 
 // Room management (scoped to this game)
 const rooms = new Map();
@@ -17,11 +23,32 @@ const sessionToSocket = new Map();    // sessionId → socketId
 const disconnectTimers = new Map();   // sessionId → timeout
 const RECONNECT_GRACE_PERIOD = 30000; // 30 seconds
 
+// ----------------------------------------
+// Room helpers
+// ----------------------------------------
+
 function getOrCreateRoom(roomId, wordPack) {
   if (!rooms.has(roomId)) {
     rooms.set(roomId, new Game(roomId, wordPack));
   }
   return rooms.get(roomId);
+}
+
+function attachRoomContext(game, nsp) {
+  game.nsp = nsp;
+  game.roomId = game.roomId || null;
+  game._rooms = rooms;
+}
+
+function setGameMode(game, mode) {
+  const handler = MODES[mode] || scribbleMode;
+  game.mode = VALID_MODES.includes(mode) ? mode : DEFAULT_MODE;
+  game.modeHandler = handler;
+
+  // Bachelor mode uses faster turns
+  if (game.mode === 'bachelor') {
+    game.turnDuration = 60;
+  }
 }
 
 function getRoomList() {
@@ -34,7 +61,8 @@ function getRoomList() {
         state: game.state,
         maxPlayers: 8,
         wordPack: game.wordPack,
-        customMode: game.useCustomWords
+        customMode: game.useCustomWords,
+        mode: game.mode
       });
     }
   });
@@ -84,6 +112,7 @@ function register(io) {
             owner: game.owner,
             wordPack: game.wordPack,
             customMode: game.useCustomWords,
+            mode: game.mode,
             reconnected: true
           };
 
@@ -131,15 +160,20 @@ function register(io) {
     });
 
     // ---- Create room ----
-    socket.on('createRoom', ({ playerName, rounds, sessionId, wordPack, customWords }) => {
+    socket.on('createRoom', ({ playerName, rounds, sessionId, wordPack, customWords, mode }) => {
       const roomId = generateRoomId();
       const pack = VALID_PACKS.includes(wordPack) ? wordPack : DEFAULT_PACK;
       const game = getOrCreateRoom(roomId, pack);
-      if (rounds) game.maxRounds = Math.min(Math.max(rounds, 1), 10);
 
+      if (rounds) game.maxRounds = Math.min(Math.max(rounds, 1), 10);
       if (Array.isArray(customWords) && customWords.length > 0) {
         game.setCustomWords(customWords);
       }
+
+      // Wire mode and context
+      game.roomId = roomId;
+      attachRoomContext(game, nsp);
+      setGameMode(game, mode);
 
       joinRoom(nsp, socket, roomId, playerName, sessionId);
     });
@@ -170,108 +204,34 @@ function register(io) {
         return;
       }
 
-      const result = game.startGame();
-      handleTurnEvent(nsp, roomId, game, result);
+      game.modeHandler.startRound(game);
       nsp.emit('roomList', getRoomList());
     });
 
-    // ---- Word chosen ----
+    // ---- Game events — routed to mode handler ----
+
     socket.on('wordChosen', (word) => {
-      const roomId = playerRooms.get(socket.id);
-      if (!roomId) return;
-      const game = rooms.get(roomId);
-      if (!game || game.state !== 'choosing' || game.currentDrawer !== socket.id) return;
-
-      // Sanitize: trim, enforce non-empty, max 50 printable chars
-      const chosen = (typeof word === 'string' ? word : '').trim().replace(/[\r\n\t]/g, ' ').substring(0, 50);
-      if (!chosen) return;
-
-      game.clearTimers();
-      const result = game.selectWord(chosen);
-
-      nsp.to(roomId).emit('turnStart', {
-        drawer: result.drawer,
-        drawerName: result.drawerName,
-        hint: result.hint,
-        wordLength: result.wordLength,
-        duration: result.duration
-      });
-
-      socket.emit('yourWord', { word: chosen });
-      nsp.to(roomId).emit('playerList', game.getPlayerList());
-
-      startHintTimer(nsp, roomId, game);
-
-      game.turnTimer = setTimeout(() => {
-        endTurn(nsp, roomId, game, false);
-      }, game.turnDuration * 1000);
-    });
-
-    // ---- Drawing data ----
-    socket.on('draw', (data) => {
-      const roomId = playerRooms.get(socket.id);
-      if (!roomId) return;
-      const game = rooms.get(roomId);
-      if (!game || game.currentDrawer !== socket.id || game.state !== 'drawing') return;
-
-      game.drawingData.push(data);
-      socket.to(roomId).emit('draw', data);
-    });
-
-    // ---- Clear canvas ----
-    socket.on('clearCanvas', () => {
-      const roomId = playerRooms.get(socket.id);
-      if (!roomId) return;
-      const game = rooms.get(roomId);
-      if (!game || game.currentDrawer !== socket.id) return;
-
-      game.drawingData = [];
-      nsp.to(roomId).emit('clearCanvas');
-    });
-
-    // ---- Chat / guess ----
-    socket.on('chatMessage', (message) => {
-      const roomId = playerRooms.get(socket.id);
-      if (!roomId) return;
-      const game = rooms.get(roomId);
+      const game = _getGame(socket);
       if (!game) return;
+      game.modeHandler.handleEvent(game, socket, { event: 'wordChosen', data: word });
+    });
 
-      const player = game.players.get(socket.id);
-      if (!player) return;
+    socket.on('draw', (data) => {
+      const game = _getGame(socket);
+      if (!game) return;
+      game.modeHandler.handleEvent(game, socket, { event: 'draw', data });
+    });
 
-      if (game.state === 'drawing' && socket.id !== game.currentDrawer) {
-        const result = game.checkGuess(socket.id, message);
+    socket.on('clearCanvas', () => {
+      const game = _getGame(socket);
+      if (!game) return;
+      game.modeHandler.handleEvent(game, socket, { event: 'clearCanvas', data: null });
+    });
 
-        if (result && result.correct) {
-          nsp.to(roomId).emit('correctGuess', {
-            playerName: result.playerName,
-            playerId: socket.id,
-            score: result.score
-          });
-          nsp.to(roomId).emit('playerList', game.getPlayerList());
-
-          if (result.allGuessed) {
-            endTurn(nsp, roomId, game, true);
-          }
-          return;
-        }
-
-        if (result && result.close) {
-          socket.emit('closeGuess', { message: "You're close!" });
-        }
-      }
-
-      if (game.currentWord && message.toLowerCase().includes(game.currentWord.toLowerCase())) {
-        socket.emit('systemMessage', { message: "Your message contained the answer!" });
-        return;
-      }
-
-      nsp.to(roomId).emit('chatMessage', {
-        playerName: player.name,
-        playerId: socket.id,
-        message,
-        color: player.avatar
-      });
+    socket.on('chatMessage', (message) => {
+      const game = _getGame(socket);
+      if (!game) return;
+      game.modeHandler.handleEvent(game, socket, { event: 'chatMessage', data: message });
     });
 
     // ---- Disconnect ----
@@ -333,7 +293,7 @@ function register(io) {
           players: game.getPlayerList()
         });
       } else if (wasDrawer && (game.state === 'drawing' || game.state === 'choosing')) {
-        endTurn(nsp, roomId, game, false);
+        game.modeHandler.endRound(game, false);
       }
 
       nsp.to(roomId).emit('playerList', game.getPlayerList());
@@ -361,11 +321,23 @@ function register(io) {
 }
 
 // ========================================
-// Helper functions (scribble-scoped)
+// Helper functions
 // ========================================
+
+function _getGame(socket) {
+  const roomId = playerRooms.get(socket.id);
+  if (!roomId) return null;
+  return rooms.get(roomId) || null;
+}
 
 async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   const game = getOrCreateRoom(roomId);
+
+  // Ensure every room has context attached (handles rooms created before nsp was available)
+  if (!game.nsp) attachRoomContext(game, nsp);
+  if (!game.modeHandler) setGameMode(game, game.mode || DEFAULT_MODE);
+  game.roomId = roomId;
+
   game.addPlayer(socket.id, playerName, sessionId);
   playerRooms.set(socket.id, roomId);
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
@@ -392,7 +364,8 @@ async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
     isOwner: game.isOwner(socket.id),
     owner: game.owner,
     wordPack: game.wordPack,
-    customMode: game.useCustomWords
+    customMode: game.useCustomWords,
+    mode: game.mode
   };
 
   if (game.state === 'drawing' || game.state === 'choosing') {
@@ -420,93 +393,6 @@ async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.emit('roomList', getRoomList());
-}
-
-function handleTurnEvent(nsp, roomId, game, result) {
-  if (!result) return;
-
-  if (result.event === 'gameOver') {
-    nsp.to(roomId).emit('gameOver', { scores: result.scores });
-    game.state = 'waiting';
-    nsp.emit('roomList', getRoomList());
-    return;
-  }
-
-  if (result.event === 'choosing') {
-    nsp.to(roomId).emit('choosing', {
-      drawer: result.drawer,
-      drawerName: result.drawerName,
-      roundNum: result.roundNum,
-      maxRounds: result.maxRounds
-    });
-
-    const drawerSocket = nsp.sockets.get(result.drawer);
-    if (drawerSocket) {
-      drawerSocket.emit('wordChoices', { choices: result.choices });
-    }
-
-    nsp.to(roomId).emit('playerList', game.getPlayerList());
-
-    game.chooseTimer = setTimeout(() => {
-      if (game.state === 'choosing') {
-        const randomWord = result.choices[Math.floor(Math.random() * result.choices.length)];
-        const turnResult = game.selectWord(randomWord);
-
-        nsp.to(roomId).emit('turnStart', {
-          drawer: turnResult.drawer,
-          drawerName: turnResult.drawerName,
-          hint: turnResult.hint,
-          wordLength: turnResult.wordLength,
-          duration: turnResult.duration
-        });
-
-        if (drawerSocket) {
-          drawerSocket.emit('yourWord', { word: randomWord });
-        }
-
-        nsp.to(roomId).emit('playerList', game.getPlayerList());
-        startHintTimer(nsp, roomId, game);
-
-        game.turnTimer = setTimeout(() => {
-          endTurn(nsp, roomId, game, false);
-        }, game.turnDuration * 1000);
-      }
-    }, game.chooseDuration * 1000);
-  }
-}
-
-function startHintTimer(nsp, roomId, game) {
-  const hintIntervals = [
-    game.turnDuration * 0.4 * 1000,
-    game.turnDuration * 0.65 * 1000
-  ];
-
-  hintIntervals.forEach((delay, index) => {
-    setTimeout(() => {
-      if (game.state === 'drawing' && game.currentWord) {
-        const revealCount = Math.min(index + 1, game.hints.length);
-        const hint = game.getPartialHint(revealCount);
-        nsp.to(roomId).emit('hint', { hint });
-      }
-    }, delay);
-  });
-}
-
-function endTurn(nsp, roomId, game, allGuessed) {
-  game.clearTimers();
-
-  nsp.to(roomId).emit('turnEnd', {
-    word: game.currentWord,
-    allGuessed,
-    scores: game.getPlayerList()
-  });
-
-  setTimeout(() => {
-    if (game.players.size >= 2) {
-      const result = game.nextTurn();
-      handleTurnEvent(nsp, roomId, game, result);
-    }
-  }, 4000);
 }
 
 function generateRoomId() {
