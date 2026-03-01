@@ -84,19 +84,6 @@
     if (score > 33) { gc.classList.add('chaos-shake'); setTimeout(() => gc.classList.remove('chaos-shake'), 600); }
   }
 
-  // ── Player list renderer ──
-  function renderScoreList(players) {
-    const el = $('#scoreList');
-    if (!el) return;
-    el.innerHTML = players.map(p =>
-      '<div class="score-item">' +
-      '<div class="score-avatar" style="background:' + (p.avatar||'#ff6b9d') + '"></div>' +
-      '<span class="score-name">' + esc(p.name) + (p.id === myId ? ' (you)' : '') + '</span>' +
-      '<span class="score-pts">' + p.score + '</span>' +
-      '</div>'
-    ).join('');
-  }
-
   function renderWaitingPlayers(players) {
     const el = $('#waitingPlayers');
     if (!el) return;
@@ -283,7 +270,7 @@
     if (!isMySosTurn) return;
     socket.emit('tosSkip');
     hide($('#tosAnswerArea'));
-    show($('#tosWaitMsg')); if ($('#tosWaitMsg')) $('#tosWaitMsg').textContent = 'Skipped 😬 -20 pts';
+    show($('#tosWaitMsg')); if ($('#tosWaitMsg')) $('#tosWaitMsg').textContent = 'Skipped 😬';
     isMySosTurn = false;
   });
   const tosInputEl = $('#tosInput');
@@ -322,12 +309,7 @@
   socket.on('playerJoined', data => renderWaitingPlayers(data.players));
   socket.on('playerLeft', data => {
     renderWaitingPlayers(data.players);
-    renderScoreList(data.players);
     appendChat('System', data.playerName + ' left 👋', '#888');
-  });
-  socket.on('playerList', players => {
-    renderWaitingPlayers(players);
-    renderScoreList(players);
   });
   socket.on('ownerUpdate', data => {
     isOwner = data.owner === myId;
@@ -363,55 +345,21 @@
     show($('#introScreen'));
     const emojiEl = $('#introEmoji'); if (emojiEl) emojiEl.textContent = data.emoji;
     const nameEl  = $('#introName');  if (nameEl)  nameEl.textContent  = data.name;
-    const roundEl = $('#introRound'); if (roundEl) roundEl.textContent = 'Round ' + data.roundNum + ' / ' + data.totalRounds;
     // Restart progress animation
     const bar = $('#introProgress');
     if (bar) { bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = ''; }
     // Update HUD label
     const hudMG = $('#hudMiniGame'); if (hudMG) hudMG.textContent = data.emoji + ' ' + data.name;
-    const hudR  = $('#hudRound');    if (hudR)  hudR.textContent  = data.roundNum + '/' + data.totalRounds;
     // Ensure HUD visible during game
     show($('#gameHud'));
   });
 
   // ── WML ──
-  socket.on('wmlStart', data => {
-    hasVoted = false; currentMiniGame = 'wml';
-    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
-    showMiniGame('wmlScreen');
-    const q = $('#wmlQuestion'); if (q) q.textContent = data.question;
-    const hint = $('#wmlVoteHint'); if (hint) hint.textContent = 'Tap who is more likely to!';
-    const prog = $('#wmlProgress'); if (prog) prog.textContent = '0/? voted';
-    // Build player vote buttons
-    const container = $('#wmlPlayers');
-    if (container) {
-      // We don't have the full player list here — server sends it separately
-      // Re-use last known players from score list
-      const scores = $$('#scoreList .score-item');
-      container.innerHTML = '';
-      scores.forEach(item => {
-        const idEl = item.dataset.id;
-        // Extract from score-item data attribute if set, else use title
-        const btn = document.createElement('button');
-        btn.className = 'wml-player-btn';
-        btn.textContent = item.querySelector('.score-name')?.textContent?.replace(' (you)','').trim() || '?';
-        // We need player IDs — attach from score-list rebuild
-        const nameText = btn.textContent;
-        // Find id from socket-known player map
-        btn.dataset.playerId = item.dataset.pid || '';
-        container.appendChild(btn);
-      });
-    }
-    startTimer(data.duration);
-  });
-
-  // Better approach: rebuild WML player buttons when playerList arrives
   // Store players array for WML button generation
   let lastPlayerList = [];
   socket.on('playerList', players => {
     lastPlayerList = players;
     renderWaitingPlayers(players);
-    renderScoreList(players);
     // Rebuild WML buttons if currently in WML voting
     if (currentMiniGame === 'wml' && !hasVoted) {
       rebuildWmlButtons(players);
@@ -426,7 +374,6 @@
     ).join('');
   }
 
-  // Override wmlStart to use lastPlayerList
   socket.on('wmlStart', data => {
     hasVoted = false; currentMiniGame = 'wml';
     showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
@@ -470,6 +417,7 @@
   // ── RFGF ──
   socket.on('rfgfStart', data => {
     hasVoted = false; currentMiniGame = 'rfgf';
+    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
     showMiniGame('rfgfScreen');
     const sc = $('#rfgfScenario'); if (sc) sc.textContent = data.scenario;
     const hint = $('#rfgfVoteHint'); if (hint) hint.textContent = 'Vote!';
@@ -506,6 +454,7 @@
   // ── FTS ──
   socket.on('ftsStart', data => {
     hasSubmitted = false; currentMiniGame = 'fts';
+    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
     showMiniGame('ftsScreen');
     const tpl = $('#ftsTemplate'); if (tpl) tpl.textContent = data.template;
     const input = $('#ftsInput'); if (input) { input.value = ''; input.disabled = false; }
@@ -539,6 +488,7 @@
   // ── TOS ──
   socket.on('tosStart', data => {
     currentMiniGame = 'tos'; isMySosTurn = false;
+    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
     showMiniGame('tosScreen');
     const nameEl = $('#tosTurnName'); if (nameEl) nameEl.textContent = data.currentPlayerName;
     const q = $('#tosQuestion'); if (q) q.textContent = data.question;
@@ -585,6 +535,7 @@
   // ── Telepathy ──
   socket.on('telepathyStart', data => {
     hasSubmitted = false; currentMiniGame = 'telepathy';
+    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
     showMiniGame('telepathyScreen');
     const q = $('#telepathyQuestion'); if (q) q.textContent = data.question;
     const input = $('#telepathyInput'); if (input) { input.value = ''; input.disabled = false; }
@@ -611,12 +562,13 @@
       ? '💀 Nobody matched — absolute disaster'
       : data.matchCount === lastPlayerList.length
         ? '🤯 Full telepathy! Everyone matched!'
-        : data.matchCount + ' player(s) matched → +100 pts each!';
+        : data.matchCount + ' player(s) matched!';
   });
 
   // ── Draw ──
   socket.on('drawStart', data => {
     currentMiniGame = 'draw';
+    showScreen('#gameArea'); show($('#gameArea')); show($('#gameHud'));
     showMiniGame('drawScreen');
     initCanvas();
     myDrawingCanvas.clear();
@@ -675,57 +627,6 @@
   // ── Game Over ──
   socket.on('gameOver', data => {
     stopTimer();
-    const players = data.players || [];
-    const chaosFinal = $('#chaosFinalScore');
-    if (chaosFinal) chaosFinal.textContent = '🔥 Final chaos level: ' + (data.chaosScore || 0) + '/100';
-
-    const final = $('#finalScores');
-    if (final) {
-      final.innerHTML = players.map((p, i) =>
-        '<div class="final-score-row">' +
-        '<span class="fs-medal">' + (MEDALS[i] || '') + '</span>' +
-        '<span class="fs-name">' + esc(p.name) + '</span>' +
-        '<span class="fs-score">' + p.score + ' pts</span>' +
-        '</div>'
-      ).join('');
-    }
-
-    // Titles
-    const statsObj = data.stats || {};
-    const statsMap = new Map(Object.entries(statsObj));
-    const TITLE_RULES = {
-      menace:       { title:'Certified Menace',      emoji:'😈' },
-      dramaStarter: { title:'Drama Starter',          emoji:'🎭' },
-      greenFlag:    { title:'Green Flag',             emoji:'🟩' },
-      redFlag:      { title:'Walking Red Flag',       emoji:'🚩' },
-      survivor:     { title:'Situationship Survivor', emoji:'💀' },
-    };
-    let maxChaos = 0, maxLies = 0, maxRed = 0;
-    players.forEach(p => {
-      const s = statsMap.get(p.id) || {};
-      if ((s.chaosActions||0) > maxChaos) maxChaos = s.chaosActions||0;
-      if ((s.liesDetected||0) > maxLies)  maxLies  = s.liesDetected||0;
-      if ((s.redFlagsReceived||0) > maxRed) maxRed = s.redFlagsReceived||0;
-    });
-    const titleCards = $('#titleCards');
-    if (titleCards) {
-      titleCards.innerHTML = '<div style="font-size:13px;color:#888;margin-bottom:8px">🏆 TITLES AWARDED</div>' +
-        players.map(p => {
-          const s = statsMap.get(p.id) || {};
-          let key = 'survivor';
-          if (maxChaos > 0 && (s.chaosActions||0) === maxChaos) key = 'menace';
-          else if ((s.redFlagsReceived||0) > maxRed/2 && maxRed > 0) key = 'redFlag';
-          else if ((s.liesDetected||0) === maxLies && maxLies >= 2) key = 'dramaStarter';
-          else if ((s.redFlagsReceived||0) === 0 && (s.liesDetected||0) === 0) key = 'greenFlag';
-          const t = TITLE_RULES[key];
-          return '<div class="title-card">' +
-            '<span class="title-emoji">' + t.emoji + '</span>' +
-            '<span class="title-name">' + esc(p.name) + '</span>' +
-            '<span class="title-label">' + t.title + '</span>' +
-            '</div>';
-        }).join('');
-    }
-
     show($('#gameOverOverlay'));
   });
 

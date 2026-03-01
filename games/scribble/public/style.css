@@ -282,6 +282,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 12px;
+  margin-top: 12px;
   color: var(--text-muted);
   font-weight: 700;
   font-size: 0.9rem;
@@ -312,6 +313,31 @@ body {
 }
 
 .round-btn:hover {
+  border-color: var(--accent-light);
+}
+
+.time-btn {
+  min-width: 48px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Nunito', sans-serif;
+}
+
+.time-btn.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.time-btn:hover {
   border-color: var(--accent-light);
 }
 
@@ -1312,6 +1338,7 @@ body {
   .btn-large { padding: 12px 28px; font-size: 1rem; }
 
   .round-btn { width: 34px; height: 34px; font-size: 0.85rem; }
+  .time-btn { min-width: 40px; height: 34px; font-size: 0.8rem; padding: 0 8px; }
 
   .join-row { gap: 8px; }
 

@@ -66,9 +66,6 @@ class CoupleGame {
     // Chaos
     this.chaosScore = 0;
 
-    // Per-player stats for title assignment
-    this.playerStats = new Map();  // socketId → { chaosActions, redFlagsReceived, liesDetected, skipCount }
-
     // Used content tracking
     this._usedWml  = new Set();
     this._usedRfgf = new Set();
@@ -86,10 +83,9 @@ class CoupleGame {
   addPlayer(socketId, name, sessionId) {
     const COLORS = ['#f43f5e','#ec4899','#a855f7','#8b5cf6','#3b82f6','#06b6d4','#10b981','#f59e0b','#ef4444','#84cc16'];
     const avatar = COLORS[this.players.size % COLORS.length];
-    const player = { id: socketId, name: name.substring(0, 20), sessionId, score: 0, avatar };
+    const player = { id: socketId, name: name.substring(0, 20), sessionId, avatar };
     this.players.set(socketId, player);
     if (this.players.size === 1) { this.owner = socketId; this.ownerSessionId = sessionId; }
-    this.playerStats.set(socketId, { chaosActions: 0, redFlagsReceived: 0, liesDetected: 0, skipCount: 0 });
     return player;
   }
 
@@ -111,8 +107,7 @@ class CoupleGame {
     const p = this.players.get(socketId);
     if (!p) return null;
     this.disconnectedPlayers.set(p.sessionId, {
-      name: p.name, score: p.score, avatar: p.avatar,
-      stats: this.playerStats.get(socketId) || {},
+      name: p.name, avatar: p.avatar,
     });
     this.players.delete(socketId);
     this.votes.delete(socketId);
@@ -126,9 +121,8 @@ class CoupleGame {
     const held = this.disconnectedPlayers.get(sessionId);
     if (!held) return null;
     this.disconnectedPlayers.delete(sessionId);
-    const player = { id: newSocketId, name: held.name, sessionId, score: held.score, avatar: held.avatar };
+    const player = { id: newSocketId, name: held.name, sessionId, avatar: held.avatar };
     this.players.set(newSocketId, player);
-    this.playerStats.set(newSocketId, held.stats || {});
     if (this.ownerSessionId === sessionId) this.owner = newSocketId;
     return player;
   }
@@ -138,8 +132,8 @@ class CoupleGame {
 
   getPlayerList() {
     const list = [];
-    this.players.forEach(p => list.push({ id: p.id, name: p.name, score: p.score, avatar: p.avatar, isOwner: p.id === this.owner }));
-    return list.sort((a, b) => b.score - a.score);
+    this.players.forEach(p => list.push({ id: p.id, name: p.name, avatar: p.avatar, isOwner: p.id === this.owner }));
+    return list;
   }
 
   // ── Game flow ──
@@ -149,10 +143,6 @@ class CoupleGame {
     this.chaosScore = 0;
     this.miniGames = shuffle(['wml', 'draw', 'rfgf', 'fts', 'tos', 'telepathy']);
     this.miniGameIndex = -1;
-    this.players.forEach(p => {
-      p.score = 0;
-      this.playerStats.set(p.id, { chaosActions: 0, redFlagsReceived: 0, liesDetected: 0, skipCount: 0 });
-    });
   }
 
   nextMiniGame() {
@@ -202,18 +192,6 @@ class CoupleGame {
     const isTie = topCount > 1;
     if (isTie) this._bumpChaos(15);
 
-    // Award points: winner gets +80, voters who picked winner get +50
-    if (winner) {
-      const p = this.players.get(winner);
-      if (p) p.score += 80;
-    }
-    this.votes.forEach((targetId, voterId) => {
-      if (targetId === winner) {
-        const voter = this.players.get(voterId);
-        if (voter) voter.score += 50;
-      }
-    });
-
     const playerNames = {};
     this.players.forEach(p => { playerNames[p.id] = p.name; });
 
@@ -245,15 +223,6 @@ class CoupleGame {
     const total = red + green;
     const majority = red > green ? 'red' : green > red ? 'green' : 'tie';
 
-    // Award +60 for voting with majority, +30 for minority
-    this.votes.forEach((v, playerId) => {
-      const p = this.players.get(playerId);
-      if (!p) return;
-      if (majority === 'tie') { p.score += 40; }
-      else if (v === majority) { p.score += 60; }
-      else { p.score += 30; }
-    });
-
     // Chaos if 80%+ red
     if (total > 0 && red / total >= 0.8) this._bumpChaos(20);
 
@@ -284,9 +253,6 @@ class CoupleGame {
     const clean = (text || '').trim().substring(0, 200);
     if (!clean) return false;
     this.submissions.set(socketId, clean);
-    // Participation points
-    const p = this.players.get(socketId);
-    if (p) p.score += 20;
     return true;
   }
 
@@ -338,7 +304,6 @@ class CoupleGame {
     const p = this.players.get(socketId);
     if (clean) {
       this.submissions.set(socketId, clean);
-      if (p) p.score += 80;
       return { answered: true };
     }
     return false;
@@ -346,12 +311,6 @@ class CoupleGame {
 
   skipTos(socketId) {
     if (socketId !== this.turnQueue[this.turnIndex]) return false;
-    const p = this.players.get(socketId);
-    if (p) {
-      p.score = Math.max(0, p.score - 20);
-      const st = this.playerStats.get(socketId);
-      if (st) st.skipCount++;
-    }
     this.submissions.set(socketId, null); // mark as skipped
     this._bumpChaos(10);
     return true;
@@ -416,7 +375,7 @@ class CoupleGame {
     this.submissions.forEach((ans, socketId) => {
       const p = this.players.get(socketId);
       const matched = ans === majority;
-      if (matched) { matchCount++; if (p) p.score += 100; }
+      if (matched) { matchCount++; }
       entries.push({ id: socketId, name: p ? p.name : '?', answer: ans, matched });
     });
 
@@ -464,10 +423,6 @@ class CoupleGame {
     const roast = ROASTS[topCap] || 'That drawing was... something.';
     this.drawCaption = topCap;
 
-    // Points: drawer gets +60 if someone guesses anything (participation)
-    const drawer = this.players.get(this.drawTarget?.drawerId);
-    if (drawer && this.votes.size > 0) drawer.score += 60;
-
     // Chaos: unanimous "Gremlin"
     if (topCap === 'Full Gremlin Mode' && topCount === this.votes.size && this.votes.size > 0) {
       this._bumpChaos(20);
@@ -480,19 +435,13 @@ class CoupleGame {
 
   _bumpChaos(amount) {
     this.chaosScore = Math.min(100, this.chaosScore + amount);
-    // Increment chaosActions for the current player (if turn-based) or all (if voting)
-    if (this.turnQueue && this.turnQueue[this.turnIndex - 1]) {
-      const st = this.playerStats.get(this.turnQueue[this.turnIndex - 1]);
-      if (st) st.chaosActions++;
-    }
   }
 
   // ── End Game ──
 
   getFinalResults() {
     const players = this.getPlayerList();
-    const stats = this.playerStats;
-    return { players, stats: Object.fromEntries([...stats.entries()]), chaosScore: this.chaosScore };
+    return { players, chaosScore: this.chaosScore };
   }
 
   cleanup() {
@@ -510,7 +459,6 @@ class CoupleGame {
     this.chaosScore = 0;
     this.votes.clear();
     this.submissions.clear();
-    this.players.forEach(p => { p.score = 0; });
   }
 }
 

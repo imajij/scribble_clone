@@ -33,16 +33,12 @@ class BachelorGame {
 
     // Chaos
     this.chaosScore = 0;        // 0-100
-
-    // Stats for titles
-    this.playerStats = new Map(); // id → { topRizz, topExcuse, liesCaught, drunkLogicWins }
   }
 
   // ── Player management ──
   addPlayer(id, name, avatar = '#a855f7') {
     if (!this.players.has(id)) {
-      this.players.set(id, { id, name, score: 0, avatar, disconnected: false });
-      this.playerStats.set(id, { topRizz: 0, topExcuse: 0, liesCaught: 0, drunkLogicWins: 0, chaosActions: 0 });
+      this.players.set(id, { id, name, avatar, disconnected: false });
     }
     if (!this.owner) this.owner = id;
     return this.players.get(id);
@@ -71,7 +67,6 @@ class BachelorGame {
     return [...this.players.values()].map(p => ({
       id: p.id,
       name: p.name,
-      score: p.score,
       avatar: p.avatar,
       isOwner: p.id === this.owner,
       disconnected: p.disconnected,
@@ -88,11 +83,6 @@ class BachelorGame {
     this.miniGameIndex = -1;
     // Shuffle mini-game order
     this.miniGames = [...this.miniGames].sort(() => Math.random() - 0.5);
-    // Reset scores
-    this.players.forEach(p => { p.score = 0; });
-    this.playerStats = new Map([...this.players.keys()].map(id => [id, {
-      topRizz: 0, topExcuse: 0, liesCaught: 0, drunkLogicWins: 0, chaosActions: 0
-    }]));
     this.chaosScore = 0;
   }
 
@@ -112,16 +102,6 @@ class BachelorGame {
 
   _bumpChaos(amount = 5) {
     this.chaosScore = Math.min(100, this.chaosScore + amount);
-  }
-
-  _addScore(playerId, pts) {
-    const p = this.players.get(playerId);
-    if (p) p.score = Math.max(0, p.score + pts);
-  }
-
-  _stat(playerId, key, amount = 1) {
-    const s = this.playerStats.get(playerId);
-    if (s && key in s) s[key] += amount;
   }
 
   // ── Sus Drawing ──
@@ -163,9 +143,7 @@ class BachelorGame {
       if (cnt > max) { max = cnt; winner = id; }
     });
     if (winner) {
-      this._addScore(winner, 100);
       this._bumpChaos(8);
-      this._stat(winner, 'chaosActions');
     }
     const results = this.submissions.map(s => ({
       playerId: s.playerId,
@@ -205,9 +183,7 @@ class BachelorGame {
     let winnerId = null, max = 0;
     Object.entries(counts).forEach(([id, c]) => { if (c > max) { max = c; winnerId = id; } });
     if (winnerId) {
-      this._addScore(winnerId, 100);
       this._bumpChaos(5);
-      this._stat(winnerId, 'chaosActions');
     }
     const results = this.submissions.map(s => ({
       playerId: s.playerId,
@@ -247,8 +223,6 @@ class BachelorGame {
     let winnerId = null, max = 0;
     Object.entries(counts).forEach(([id, c]) => { if (c > max) { max = c; winnerId = id; } });
     if (winnerId) {
-      this._addScore(winnerId, 100);
-      this._stat(winnerId, 'topExcuse');
       this._bumpChaos(6);
     }
     const results = this.submissions.map(s => ({
@@ -293,9 +267,6 @@ class BachelorGame {
       return { playerId: s.playerId, name: this.players.get(s.playerId)?.name || '?', text: s.text, avg, votes: r.length };
     }).sort((a, b) => b.avg - a.avg);
     if (results.length > 0) {
-      const winnerId = results[0].playerId;
-      this._addScore(winnerId, 100);
-      this._stat(winnerId, 'topRizz');
       this._bumpChaos(7);
     }
     this.submissions = [];
@@ -341,16 +312,12 @@ class BachelorGame {
     let correctCount = 0;
     voters.forEach(([id, v]) => {
       if (v === correctVerdicts) {
-        this._addScore(id, 50);
         correctCount++;
-        this._stat(id, 'liesCaught');
       }
     });
     const fooledCount = voters.length - correctCount;
     if (fooledCount > 0) {
-      this._addScore(this.currentSpeaker, fooledCount * 30);
       this._bumpChaos(fooledCount * 4);
-      this._stat(this.currentSpeaker, 'chaosActions');
     }
     return {
       truth: !isLie,
@@ -393,8 +360,6 @@ class BachelorGame {
     let winnerId = null, max = 0;
     Object.entries(counts).forEach(([id, c]) => { if (c > max) { max = c; winnerId = id; } });
     if (winnerId) {
-      this._addScore(winnerId, 100);
-      this._stat(winnerId, 'drunkLogicWins');
       this._bumpChaos(10);
     }
     const results = this.submissions.map(s => ({
@@ -411,16 +376,12 @@ class BachelorGame {
   // ── Final results ──
   getFinalResults() {
     const players = [...this.players.values()]
-      .sort((a, b) => b.score - a.score)
-      .map(p => ({ id: p.id, name: p.name, score: p.score, avatar: p.avatar }));
-    const stats = {};
-    this.playerStats.forEach((s, id) => { stats[id] = { ...s }; });
-    return { players, stats, chaosScore: this.chaosScore };
+      .map(p => ({ id: p.id, name: p.name, avatar: p.avatar }));
+    return { players, chaosScore: this.chaosScore };
   }
 
   cleanup() {
     this.players.clear();
-    this.playerStats.clear();
   }
 
   reset() {
@@ -432,10 +393,6 @@ class BachelorGame {
     this.ratings = {};
     this.lieVotes = {};
     this.chaosScore = 0;
-    this.players.forEach(p => { p.score = 0; });
-    this.playerStats = new Map([...this.players.keys()].map(id => [id, {
-      topRizz: 0, topExcuse: 0, liesCaught: 0, drunkLogicWins: 0, chaosActions: 0
-    }]));
   }
 }
 

@@ -52,7 +52,7 @@ function register(io) {
     if (!game) return;
     const next = game.nextMiniGame();
     if (!next) {
-      // Game over
+      // All rounds complete — game over
       const results = game.getFinalResults();
       nsp.to(roomId).emit('gameOver', results);
       return;
@@ -61,8 +61,6 @@ function register(io) {
     nsp.to(roomId).emit('miniGameIntro', {
       name: meta.name,
       emoji: meta.emoji,
-      roundNum: game.miniGameIndex + 1,
-      totalRounds: game.miniGames.length,
     });
     setTimeout(() => startMiniGame(roomId), INTRO_DURATION);
   }

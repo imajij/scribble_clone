@@ -4,7 +4,6 @@
 
 const CoupleGame = require('./coupleGame');
 const tracker = require('../../playerTracker');
-const { saveScore, loadScore } = require('../../redisCache');
 
 const rooms = new Map();
 const playerRooms = new Map();
@@ -256,7 +255,6 @@ function register(io) {
       if (!player) { playerRooms.delete(socket.id); return; }
 
       if (game.state !== 'waiting') {
-        if (player.sessionId && player.score > 0) saveScore(GAME_ID, player.sessionId, player.score);
         game.holdPlayerForReconnect(socket.id);
         playerRooms.delete(socket.id);
         disconnectTimers.set(player.sessionId, setTimeout(() => {
@@ -301,11 +299,6 @@ async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   if (!rooms.has(roomId)) rooms.set(roomId, new CoupleGame(roomId));
   const game = rooms.get(roomId);
   const player = game.addPlayer(socket.id, name, sessionId);
-
-  if (sessionId) {
-    const cached = await loadScore(GAME_ID, sessionId);
-    if (cached !== null && player && player.score === 0) player.score = cached;
-  }
 
   sessionToSocket.set(sessionId, socket.id);
   playerRooms.set(socket.id, roomId);
@@ -358,8 +351,6 @@ function advanceMiniGame(nsp, roomId, game) {
     id: next,
     name: label.name,
     emoji: label.emoji,
-    roundNum: game.miniGameIndex + 1,
-    totalRounds: 6,
   });
 
   // After intro, start the mini-game

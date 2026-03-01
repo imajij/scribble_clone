@@ -45,9 +45,10 @@ function setGameMode(game, mode) {
   game.mode = VALID_MODES.includes(mode) ? mode : DEFAULT_MODE;
   game.modeHandler = handler;
 
-  // Bachelor mode uses faster turns
-  if (game.mode === 'bachelor') {
+  // Bachelor mode uses faster turns — but only if user hasn't explicitly set a duration
+  if (game.mode === 'bachelor' && !game.defaultTurnDuration) {
     game.turnDuration = 60;
+    game.defaultTurnDuration = 60; // save so play-again restores to 60s
   }
 }
 
@@ -160,12 +161,16 @@ function register(io) {
     });
 
     // ---- Create room ----
-    socket.on('createRoom', ({ playerName, rounds, sessionId, wordPack, customWords, mode }) => {
+    socket.on('createRoom', ({ playerName, rounds, turnDuration, sessionId, wordPack, customWords, mode }) => {
       const roomId = generateRoomId();
       const pack = VALID_PACKS.includes(wordPack) ? wordPack : DEFAULT_PACK;
       const game = getOrCreateRoom(roomId, pack);
 
       if (rounds) game.maxRounds = Math.min(Math.max(rounds, 1), 10);
+      if (turnDuration) {
+        game.turnDuration = Math.min(Math.max(turnDuration, 15), 180);
+        game.defaultTurnDuration = game.turnDuration; // user override — preserved on play-again
+      }
       if (Array.isArray(customWords) && customWords.length > 0) {
         game.setCustomWords(customWords);
       }
@@ -232,6 +237,28 @@ function register(io) {
       const game = _getGame(socket);
       if (!game) return;
       game.modeHandler.handleEvent(game, socket, { event: 'chatMessage', data: message });
+    });
+
+    // ---- Play Again (keep in same room, go back to waiting for all) ----
+    socket.on('playAgain', () => {
+      const roomId = playerRooms.get(socket.id);
+      if (!roomId) return;
+      const game = rooms.get(roomId);
+      if (!game) return;
+
+      // Only allow when the game is in 'waiting' state (i.e., game just ended)
+      if (game.state !== 'waiting') return;
+
+      // Restore the turn duration in case it was altered by bachelor mode etc.
+      if (game.defaultTurnDuration) {
+        game.turnDuration = game.defaultTurnDuration;
+      }
+
+      // Broadcast to everyone in the room to return to the waiting screen
+      nsp.to(roomId).emit('gameReset', {
+        message: 'Get ready for another round! \u{1F3AE}',
+        players: game.getPlayerList()
+      });
     });
 
     // ---- Disconnect ----

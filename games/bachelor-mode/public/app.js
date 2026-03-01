@@ -71,18 +71,6 @@
   }
 
   // ── Player lists ──
-  function renderScoreList(players) {
-    const el = $('#scoreList');
-    if (!el) return;
-    el.innerHTML = players.map(p =>
-      '<div class="score-item" data-pid="' + p.id + '">' +
-      '<div class="score-avatar" style="background:' + (p.avatar||'#a855f7') + '"></div>' +
-      '<span class="score-name">' + esc(p.name) + (p.id === myId ? ' (you)' : '') + '</span>' +
-      '<span class="score-pts">' + p.score + '</span>' +
-      '</div>'
-    ).join('');
-  }
-
   function renderWaiting(players) {
     const el = $('#waitingPlayers');
     if (el) el.innerHTML = players.map(p =>
@@ -210,7 +198,6 @@
     ).join('');
   }
 
-  // ── Lobby wiring ──
   $('#playNowBtn').addEventListener('click', () => {
     const name = (($('#playerName') && $('#playerName').value) || '').trim();
     if (!name) { alert('Enter your name first!'); return; }
@@ -347,8 +334,8 @@
   });
 
   socket.on('playerJoined', data => { lastPlayerList = data.players; renderWaiting(data.players); });
-  socket.on('playerLeft', data => { lastPlayerList = data.players; renderWaiting(data.players); renderScoreList(data.players); appendChat('System', data.playerName + ' left 👋', '#888'); });
-  socket.on('playerList', players => { lastPlayerList = players; renderWaiting(players); renderScoreList(players); });
+  socket.on('playerLeft', data => { lastPlayerList = data.players; renderWaiting(data.players); appendChat('System', data.playerName + ' left 👋', '#888'); });
+  socket.on('playerList', players => { lastPlayerList = players; renderWaiting(players); });
   socket.on('ownerUpdate', data => {
     isOwner = data.owner === myId;
     const btn = $('#startGameBtn');
@@ -370,21 +357,18 @@
   socket.on('miniGameIntro', data => {
     stopTimer();
     showScreen('#introScreen');
-    const emojiEl = $('#introEmoji'), nameEl = $('#introName'), roundEl = $('#introRound');
+    const emojiEl = $('#introEmoji'), nameEl = $('#introName');
     if (emojiEl) emojiEl.textContent = data.emoji;
     if (nameEl) nameEl.textContent = data.name;
-    if (roundEl) roundEl.textContent = 'Round ' + data.roundNum + ' / ' + data.totalRounds;
     const bar = $('#introProgress');
     if (bar) { bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = ''; }
-    const hudMG = $('#hudMiniGame'), hudR = $('#hudRound');
+    const hudMG = $('#hudMiniGame');
     if (hudMG) hudMG.textContent = data.emoji + ' ' + data.name;
-    if (hudR) hudR.textContent = data.roundNum + '/' + data.totalRounds;
     show($('#gameHud'));
   });
 
   socket.on('gameStarted', data => {
     lastPlayerList = data.players;
-    renderScoreList(data.players);
     show($('#gameArea')); show($('#gameHud'));
   });
 
@@ -650,41 +634,6 @@
     const players = data.players || [];
     const chaosFinal = $('#chaosFinalScore');
     if (chaosFinal) chaosFinal.textContent = '🔥 Final chaos: ' + (data.chaosScore || 0) + '/100';
-    const final = $('#finalScores');
-    if (final) {
-      final.innerHTML = players.map((p, i) =>
-        '<div class="final-score-row">' +
-        '<span class="fs-medal">' + (MEDALS[i] || '') + '</span>' +
-        '<span class="fs-name">' + esc(p.name) + '</span>' +
-        '<span class="fs-score">' + p.score + ' pts</span>' +
-        '</div>'
-      ).join('');
-    }
-    // Titles
-    const stats = data.stats || {};
-    const TITLES = {
-      topRizz:       { title: 'Main Character 🔥', emoji: '🔥' },
-      topExcuse:     { title: 'Professional Liar', emoji: '🤥' },
-      liesCaught:    { title: 'Human Lie Detector', emoji: '🕵️' },
-      drunkLogicWins:{ title: 'Certified Unhinged', emoji: '🍺' },
-      default:       { title: 'Survivor',           emoji: '😐' },
-    };
-    const titleCards = $('#titleCards');
-    if (titleCards) {
-      titleCards.innerHTML = '<div style="font-size:12px;color:#64748b;margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Titles Awarded</div>' +
-        players.map(p => {
-          const s = stats[p.id] || {};
-          const maxKey = ['topRizz','topExcuse','liesCaught','drunkLogicWins'].reduce((best, k) => {
-            return (s[k] || 0) > (s[best] || 0) ? k : best;
-          }, 'topRizz');
-          const t = (s[maxKey] || 0) > 0 ? (TITLES[maxKey] || TITLES.default) : TITLES.default;
-          return '<div class="title-card">' +
-            '<span class="title-emoji">' + t.emoji + '</span>' +
-            '<span class="title-name">' + esc(p.name) + '</span>' +
-            '<span class="title-label">' + t.title + '</span>' +
-            '</div>';
-        }).join('');
-    }
     show($('#gameOverOverlay'));
   });
 

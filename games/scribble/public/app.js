@@ -7,6 +7,7 @@ let drawingCanvas;
 let myId = null;
 let currentRoom = null;
 let selectedRounds = 3;
+let selectedTime = 80;
 let timerInterval = null;
 let isDrawer = false;
 let isOwner = false;
@@ -138,6 +139,14 @@ roundBtns.forEach(btn => {
   });
 });
 
+document.querySelectorAll('.time-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedTime = parseInt(btn.dataset.time);
+  });
+});
+
 createRoomBtn.addEventListener('click', () => {
   const name = playerNameInput.value.trim();
   if (!name) {
@@ -145,7 +154,7 @@ createRoomBtn.addEventListener('click', () => {
     playerNameInput.focus();
     return;
   }
-  socket.emit('createRoom', { playerName: name, rounds: selectedRounds, sessionId });
+  socket.emit('createRoom', { playerName: name, rounds: selectedRounds, turnDuration: selectedTime, sessionId });
 });
 
 joinRoomBtn.addEventListener('click', () => {
@@ -578,11 +587,9 @@ socket.on('gameReset', ({ message, players }) => {
 });
 
 playAgainBtn.addEventListener('click', () => {
-  gameOverOverlay.classList.add('hidden');
-  // Go back to waiting screen
-  gameScreen.classList.add('hidden');
-  waitingScreen.classList.remove('hidden');
-  updateStartButton();
+  // Tell the server to reset the room — the server will broadcast gameReset
+  // to ALL players so everyone returns to the waiting screen together
+  socket.emit('playAgain');
 });
 
 // Leave room button — clear session so we don't auto-reconnect
