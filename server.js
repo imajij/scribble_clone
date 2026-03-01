@@ -135,6 +135,31 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // ============================================================
+// 7. Keep-alive self-ping (prevents Render free tier spin-down)
+// ============================================================
+
+function startKeepAlive() {
+  const selfUrl = process.env.RENDER_EXTERNAL_URL;
+  if (!selfUrl) {
+    console.log('  ⏭️  Keep-alive skipped (RENDER_EXTERNAL_URL not set)');
+    return;
+  }
+
+  const pingUrl = `${selfUrl}/api/games`;
+  const protocol = pingUrl.startsWith('https') ? require('https') : require('http');
+
+  setInterval(() => {
+    protocol.get(pingUrl, (res) => {
+      res.resume(); // discard response body
+    }).on('error', (err) => {
+      console.warn('  ⚠️  Keep-alive ping failed:', err.message);
+    });
+  }, 14_000); // every 14 seconds
+
+  console.log(`  💓 Keep-alive pinging ${pingUrl} every 14s`);
+}
+
+// ============================================================
 // Start
 // ============================================================
 
@@ -144,4 +169,5 @@ server.listen(PORT, () => {
   console.log(`   Games: ${getIds().join(', ')}`);
   console.log(`   Word packs: ${getPackList().map(p => `${p.id} (${p.wordCount})`).join(', ')}`);
   console.log('');
+  startKeepAlive();
 });
