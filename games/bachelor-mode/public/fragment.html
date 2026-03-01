@@ -33,6 +33,15 @@
     <div id="waitingPlayers" class="player-grid"></div>
     <div class="waiting-footer">
       <div class="waiting-hint">Share the room code to invite friends!</div>
+      <div id="roundsConfig" class="rounds-config hidden">
+        <label for="roundsSelect">Rounds:</label>
+        <select id="roundsSelect" class="rounds-select">
+          <option value="3">3 rounds</option>
+          <option value="6" selected>6 rounds (default)</option>
+          <option value="9">9 rounds</option>
+          <option value="12">12 rounds</option>
+        </select>
+      </div>
       <button id="startGameBtn" class="btn btn-bach btn-lg" disabled>Need 2+ players</button>
     </div>
     <div class="chat-panel">
@@ -70,6 +79,7 @@
       </div>
     </div>
     <div class="hud-right">
+      <span id="hudRound" class="hud-round">1/6</span>
       <span id="hudTimer" class="hud-timer">--</span>
       <span class="hud-timer-s">s</span>
     </div>
@@ -267,6 +277,12 @@
       <div id="drunkRevealPrompt" class="prompt-text small"></div>
       <div id="drunkRevealList" class="reveal-list"></div>
       <div class="winner-announce" id="drunkWinner"></div>
+    </div>
+
+    <!-- Next Round Control (shown after each mini-game reveal) -->
+    <div id="nextRoundArea" class="next-round-area hidden">
+      <button id="nextRoundBtn" class="btn btn-bach btn-lg hidden">▶ Next Round</button>
+      <p id="nextRoundWait" class="wait-msg hidden">Waiting for host to continue...</p>
     </div>
 
   </div><!-- /#gameArea -->

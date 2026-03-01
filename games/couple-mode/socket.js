@@ -88,12 +88,12 @@ function register(io) {
     });
 
     // ── Start game ──
-    socket.on('startGame', () => {
+    socket.on('startGame', ({ rounds, startWith } = {}) => {
       const roomId = playerRooms.get(socket.id);
       if (!roomId) return;
       const game = rooms.get(roomId);
       if (!game || !game.canStart() || !game.isOwner(socket.id)) return;
-      game.startGame();
+      game.startGame(rounds || 6, startWith);
       advanceMiniGame(nsp, roomId, game);
     });
 
@@ -233,6 +233,16 @@ function register(io) {
       nsp.to(roomId).emit('chatMessage', { name: player.name, message: text, avatar: player.avatar });
     });
 
+    // ── Proceed to next mini-game (owner only) ──
+    socket.on('proceedToNext', () => {
+      const roomId = playerRooms.get(socket.id);
+      if (!roomId) return;
+      const game = rooms.get(roomId);
+      if (!game || !game.isOwner(socket.id)) return;
+      if (game.state === 'waiting' || game.state === 'playing') return; // not in a reveal state
+      advanceMiniGame(nsp, roomId, game);
+    });
+
     // ── Play Again ──
     socket.on('playAgain', () => {
       const roomId = playerRooms.get(socket.id);
@@ -351,6 +361,8 @@ function advanceMiniGame(nsp, roomId, game) {
     id: next,
     name: label.name,
     emoji: label.emoji,
+    round: game.miniGameIndex,        // 1-based (already incremented)
+    totalRounds: game.totalRounds,
   });
 
   // After intro, start the mini-game
@@ -413,7 +425,7 @@ function finishWml(nsp, roomId, game) {
   nsp.to(roomId).emit('wmlResult', result);
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-  game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE);
+  nsp.to(roomId).emit('readyForNext');
 }
 
 function finishRfgf(nsp, roomId, game) {
@@ -421,7 +433,7 @@ function finishRfgf(nsp, roomId, game) {
   nsp.to(roomId).emit('rfgfResult', result);
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-  game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE);
+  nsp.to(roomId).emit('readyForNext');
 }
 
 function finishFts(nsp, roomId, game) {
@@ -429,7 +441,7 @@ function finishFts(nsp, roomId, game) {
   nsp.to(roomId).emit('ftsReveal', data);
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-  game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE + 3000);
+  nsp.to(roomId).emit('readyForNext');
 }
 
 function tosNextTurn(nsp, roomId, game) {
@@ -439,7 +451,7 @@ function tosNextTurn(nsp, roomId, game) {
     const entries = game.getTosReveal();
     nsp.to(roomId).emit('tosReveal', { entries });
     nsp.to(roomId).emit('playerList', game.getPlayerList());
-    game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
     return;
   }
   nsp.to(roomId).emit('tosTurn', { ...next, duration: DURATIONS.tos_answering / 1000 });
@@ -457,7 +469,7 @@ function finishTelepathy(nsp, roomId, game) {
   nsp.to(roomId).emit('telepathyReveal', result);
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-  game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE);
+  nsp.to(roomId).emit('readyForNext');
 }
 
 function startDrawGuessing(nsp, roomId, game) {
@@ -471,7 +483,7 @@ function finishDrawGuessing(nsp, roomId, game) {
   nsp.to(roomId).emit('drawReveal', result);
   nsp.to(roomId).emit('playerList', game.getPlayerList());
   nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-  game.revealTimer = setTimeout(() => advanceMiniGame(nsp, roomId, game), REVEAL_PAUSE);
+  nsp.to(roomId).emit('readyForNext');
 }
 
 module.exports = { register };

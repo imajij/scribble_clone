@@ -61,6 +61,8 @@ function register(io) {
     nsp.to(roomId).emit('miniGameIntro', {
       name: meta.name,
       emoji: meta.emoji,
+      round: game.miniGameIndex,       // 1-based (already incremented)
+      totalRounds: game.totalRounds,
     });
     setTimeout(() => startMiniGame(roomId), INTRO_DURATION);
   }
@@ -112,7 +114,7 @@ function register(io) {
       winnerName: result.winnerName,
       actualPrompt: game.drawTarget?.prompt || '',
     });
-    setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
   }
 
   // ── Caption This Disaster ──
@@ -131,7 +133,7 @@ function register(io) {
     if (!game || game.currentMiniGame !== 'caption') return;
     if (game.submissions.length === 0) {
       nsp.to(roomId).emit('captionReveal', { scene: game.currentPrompt, results: [], winnerName: null });
-      setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+      nsp.to(roomId).emit('readyForNext');
       return;
     }
     // Anonymous voting (anonymize names)
@@ -149,7 +151,7 @@ function register(io) {
     const result = game.endCaption();
     nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
     nsp.to(roomId).emit('captionReveal', result);
-    setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
   }
 
   // ── Excuse Generator ──
@@ -164,7 +166,7 @@ function register(io) {
     if (!game || game.currentMiniGame !== 'excuse') return;
     if (game.submissions.length === 0) {
       nsp.to(roomId).emit('excuseReveal', { prompt: game.currentPrompt, results: [], winnerName: null });
-      setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+      nsp.to(roomId).emit('readyForNext');
       return;
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
@@ -178,7 +180,7 @@ function register(io) {
     const result = game.endExcuse();
     nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
     nsp.to(roomId).emit('excuseReveal', result);
-    setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
   }
 
   // ── Rate the Rizz ──
@@ -193,7 +195,7 @@ function register(io) {
     if (!game || game.currentMiniGame !== 'rizz') return;
     if (game.submissions.length === 0) {
       nsp.to(roomId).emit('rizzReveal', { prompt: game.currentPrompt, results: [], winnerName: null });
-      setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+      nsp.to(roomId).emit('readyForNext');
       return;
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
@@ -207,7 +209,7 @@ function register(io) {
     const result = game.endRizz();
     nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
     nsp.to(roomId).emit('rizzReveal', result);
-    setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
   }
 
   // ── Lie Detector ──
@@ -247,7 +249,7 @@ function register(io) {
     if (game.hasMoreLieSpeakers()) {
       setTimeout(() => {
         const nextTurn = game._nextLieSpeaker();
-        if (!nextTurn) { setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE); return; }
+        if (!nextTurn) { nsp.to(roomId).emit('readyForNext'); return; }
         nsp.to(roomId).emit('lieStart', {
           speakerId: nextTurn.speakerId,
           speakerName: nextTurn.speakerName,
@@ -257,7 +259,7 @@ function register(io) {
         setTimeout(() => finishLieStatement(roomId), DURATIONS.lie_statement);
       }, REVEAL_PAUSE);
     } else {
-      setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+      nsp.to(roomId).emit('readyForNext');
     }
   }
 
@@ -273,7 +275,7 @@ function register(io) {
     if (!game || game.currentMiniGame !== 'drunklogic') return;
     if (game.submissions.length === 0) {
       nsp.to(roomId).emit('drunkReveal', { prompt: game.currentPrompt, results: [], winnerName: null });
-      setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+      nsp.to(roomId).emit('readyForNext');
       return;
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
@@ -287,7 +289,7 @@ function register(io) {
     const result = game.endDrunkLogic();
     nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
     nsp.to(roomId).emit('drunkReveal', result);
-    setTimeout(() => advanceMiniGame(roomId), REVEAL_PAUSE);
+    nsp.to(roomId).emit('readyForNext');
   }
 
   // Helper: find socket by playerId
@@ -375,13 +377,13 @@ function register(io) {
       nsp.emit('roomList', getRoomList());
     });
 
-    socket.on('startGame', () => {
+    socket.on('startGame', ({ rounds } = {}) => {
       const roomId = playerRooms.get(socket.id);
       const game = rooms.get(roomId);
       if (!game || game.state !== 'waiting') return;
       if (game.owner !== socket._bachPlayerId) return;
       if (game.getActivePlayers().length < 2) { socket.emit('error', { message: 'Need at least 2 players' }); return; }
-      game.startGame();
+      game.startGame(rounds || 6);
       nsp.to(roomId).emit('gameStarted', { players: game.getPlayerList() });
       advanceMiniGame(roomId);
     });
@@ -511,6 +513,15 @@ function register(io) {
       if (!player || !message) return;
       const text = String(message).slice(0, 200);
       nsp.to(roomId).emit('chatMessage', { name: player.name, message: text, avatar: player.avatar });
+    });
+
+    // ── Proceed to next mini-game (owner only) ──
+    socket.on('proceedToNext', () => {
+      const roomId = playerRooms.get(socket.id);
+      const game = rooms.get(roomId);
+      if (!game || game.owner !== socket._bachPlayerId) return;
+      if (game.state === 'waiting' || game.state === 'gameover') return;
+      advanceMiniGame(roomId);
     });
 
     socket.on('playAgain', () => {

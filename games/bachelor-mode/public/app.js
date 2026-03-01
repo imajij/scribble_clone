@@ -214,8 +214,21 @@
     socket.emit('joinRoom', { roomId: code, playerName: name, sessionId });
   });
 
-  $('#startGameBtn').addEventListener('click', () => socket.emit('startGame'));
+  $('#startGameBtn').addEventListener('click', () => {
+    const roundsEl = $('#roundsSelect');
+    const rounds = roundsEl ? parseInt(roundsEl.value) || 6 : 6;
+    socket.emit('startGame', { rounds });
+  });
   $('#playAgainBtn').addEventListener('click', () => socket.emit('playAgain'));
+
+  // ── Next Round (owner only) ──
+  const nextRoundBtnEl = $('#nextRoundBtn');
+  if (nextRoundBtnEl) {
+    nextRoundBtnEl.addEventListener('click', () => {
+      hide($('#nextRoundArea'));
+      socket.emit('proceedToNext');
+    });
+  }
 
   // ── Lie detector buttons ──
   const lieRealBtn = $('#lieRealBtn'), lieLieBtn = $('#lieLieBtn');
@@ -329,6 +342,8 @@
     const codeEl = $('#roomCodeDisplay'); if (codeEl) codeEl.textContent = data.roomId;
     if (data.chaosScore) updateChaos(data.chaosScore);
     renderWaiting(data.players);
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
     showScreen('#waitingScreen');
     setupChat();
   });
@@ -340,6 +355,8 @@
     isOwner = data.owner === myId;
     const btn = $('#startGameBtn');
     if (btn) { btn.disabled = !isOwner; btn.textContent = isOwner ? '🍻 Start Game!' : 'Waiting for owner...'; }
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
   });
   socket.on('playerDisconnected', data => appendChat('System', data.playerName + ' disconnected ⚠️', '#888'));
   socket.on('playerReconnected', data => appendChat('System', data.playerName + ' reconnected! 🔌', '#888'));
@@ -350,12 +367,16 @@
   socket.on('backToLobby', data => {
     stopTimer(); currentMiniGame = null;
     hide($('#gameArea')); hide($('#gameHud'));
-    renderWaiting(data.players); show($('#waitingScreen'));
+    renderWaiting(data.players);
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
+    show($('#waitingScreen'));
     hide($('#gameOverOverlay'));
   });
 
   socket.on('miniGameIntro', data => {
     stopTimer();
+    hide($('#nextRoundArea'));
     showScreen('#introScreen');
     const emojiEl = $('#introEmoji'), nameEl = $('#introName');
     if (emojiEl) emojiEl.textContent = data.emoji;
@@ -364,7 +385,23 @@
     if (bar) { bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = ''; }
     const hudMG = $('#hudMiniGame');
     if (hudMG) hudMG.textContent = data.emoji + ' ' + data.name;
+    const hudRound = $('#hudRound');
+    if (hudRound && data.totalRounds) hudRound.textContent = data.round + '/' + data.totalRounds;
     show($('#gameHud'));
+  });
+
+  // ── Ready for next round ──
+  socket.on('readyForNext', () => {
+    stopTimer();
+    const area = $('#nextRoundArea'); if (!area) return;
+    show(area);
+    if (isOwner) {
+      const btn = $('#nextRoundBtn'); const wait = $('#nextRoundWait');
+      show(btn); hide(wait);
+    } else {
+      const btn = $('#nextRoundBtn'); const wait = $('#nextRoundWait');
+      hide(btn); show(wait);
+    }
   });
 
   socket.on('gameStarted', data => {

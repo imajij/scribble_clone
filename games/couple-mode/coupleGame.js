@@ -138,17 +138,26 @@ class CoupleGame {
 
   // ── Game flow ──
 
-  startGame() {
+  startGame(totalRounds = 6, startWith) {
     this.state = 'playing';
     this.chaosScore = 0;
+    this.totalRounds = Math.max(1, Math.min(20, totalRounds));
     this.miniGames = shuffle(['wml', 'draw', 'rfgf', 'fts', 'tos', 'telepathy']);
+    if (startWith) {
+      const idx = this.miniGames.indexOf(startWith);
+      if (idx > 0) {
+        this.miniGames.splice(idx, 1);
+        this.miniGames.unshift(startWith);
+      }
+    }
     this.miniGameIndex = -1;
   }
 
   nextMiniGame() {
     this.miniGameIndex++;
-    if (this.miniGameIndex >= this.miniGames.length) return null;
-    this.currentMiniGame = this.miniGames[this.miniGameIndex];
+    if (this.miniGameIndex >= this.totalRounds) return null;
+    // Cycle through mini-games if totalRounds > 6
+    this.currentMiniGame = this.miniGames[this.miniGameIndex % this.miniGames.length];
     this._resetRoundState();
     return this.currentMiniGame;
   }

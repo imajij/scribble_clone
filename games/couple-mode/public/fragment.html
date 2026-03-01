@@ -35,7 +35,17 @@
     <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
     <p class="share-hint">Share this code with everyone 💌</p>
     <div id="waitingPlayers" class="player-grid"></div>
+    <div id="selectedGameBadge" class="selected-game-badge hidden"></div>
     <div class="waiting-actions">
+      <div id="roundsConfig" class="rounds-config hidden">
+        <label for="roundsSelect">Rounds:</label>
+        <select id="roundsSelect" class="rounds-select">
+          <option value="3">3 rounds</option>
+          <option value="6" selected>6 rounds (default)</option>
+          <option value="9">9 rounds</option>
+          <option value="12">12 rounds</option>
+        </select>
+      </div>
       <button id="startGameBtn" class="btn btn-couple btn-lg" disabled>Need 2+ players</button>
       <p class="player-count">Players: <span id="playerCount">0</span>/10</p>
     </div>
@@ -60,6 +70,7 @@
     <div class="hud-timer" id="hudTimer">—</div>
   </div>
   <div class="hud-right">
+    <span id="hudRound" class="hud-round">1/6</span>
     <span class="hud-chaos-label">🔥</span>
   </div>
 </div>
@@ -187,6 +198,9 @@
       <!-- Draw Guessing -->
       <div id="drawGuessScreen" class="minigame-screen hidden">
         <div class="mg-header">🎨 What is this masterpiece?</div>
+        <div class="canvas-wrap canvas-readonly">
+          <canvas id="coupleGuessCanvas"></canvas>
+        </div>
         <div class="caption-grid" id="captionGrid"><!-- caption buttons injected --></div>
         <p class="vote-hint" id="drawGuessHint">Pick a caption!</p>
         <div class="vote-progress"><span id="drawGuessProgress">0/0 voted</span></div>
@@ -195,8 +209,17 @@
       <!-- Draw Reveal -->
       <div id="drawRevealScreen" class="minigame-screen hidden">
         <div class="mg-header">🎨 The Verdict</div>
+        <div class="canvas-wrap canvas-readonly">
+          <canvas id="coupleRevealCanvas"></canvas>
+        </div>
         <div class="roast-card" id="roastCard"></div>
         <div id="drawRevealWinner" class="result-winner"></div>
+      </div>
+
+      <!-- Next Round Control (shown after each mini-game reveal) -->
+      <div id="nextRoundArea" class="next-round-area hidden">
+        <button id="nextRoundBtn" class="btn btn-couple btn-lg hidden">▶ Next Round</button>
+        <p id="nextRoundWait" class="wait-msg hidden">Waiting for host to continue...</p>
       </div>
 
     </div>

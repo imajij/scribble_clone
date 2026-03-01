@@ -204,10 +204,25 @@
   });
 
   // ── Waiting Room ──
-  $('#startGameBtn').addEventListener('click', () => socket.emit('startGame'));
+  $('#startGameBtn').addEventListener('click', () => {
+    const roundsEl = $('#roundsSelect');
+    const rounds = roundsEl ? parseInt(roundsEl.value) || 6 : 6;
+    const startWith = sessionStorage.getItem('selectedCoupleGame') || undefined;
+    sessionStorage.removeItem('selectedCoupleGame');
+    socket.emit('startGame', { rounds, startWith });
+  });
 
   // ── Play Again ──
   $('#playAgainBtn').addEventListener('click', () => socket.emit('playAgain'));
+
+  // ── Next Round (owner only) ──
+  const nextRoundBtnEl = $('#nextRoundBtn');
+  if (nextRoundBtnEl) {
+    nextRoundBtnEl.addEventListener('click', () => {
+      hide($('#nextRoundArea'));
+      socket.emit('proceedToNext');
+    });
+  }
 
   // ── WML vote ──
   // (buttons injected dynamically, event delegation)
@@ -302,6 +317,18 @@
     const codeEl = $('#roomCodeDisplay');
     if (codeEl) codeEl.textContent = data.roomId;
     if (data.chaosScore) updateChaos(data.chaosScore);
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
+    // Show which mini-game will start first
+    const MINIGAME_LABELS = { wml: "\u{1F5F3}\uFE0F Who's More Likely", draw: '\u{1F3A8} Draw Your Partner', rfgf: '\u{1F6A9} Red Flag or Green Flag', fts: '\u270D\uFE0F Finish The Sentence', tos: '\u{1F62C} Truth or Skip', telepathy: '\u{1F52E} Couple Telepathy' };
+    const selected = sessionStorage.getItem('selectedCoupleGame');
+    const badge = $('#selectedGameBadge');
+    if (badge && selected && MINIGAME_LABELS[selected]) {
+      badge.textContent = 'Starting with: ' + MINIGAME_LABELS[selected];
+      show(badge);
+    } else if (badge) {
+      hide(badge);
+    }
     showScreen('#waitingScreen');
     setupChat();
   });
@@ -318,6 +345,8 @@
       startBtn.disabled = !isOwner;
       startBtn.textContent = isOwner ? '🎮 Start Game!' : 'Waiting for owner...';
     }
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
   });
   socket.on('playerDisconnected', data => appendChat('System', data.playerName + ' disconnected ⚠️', '#888'));
   socket.on('playerReconnected', data => appendChat('System', data.playerName + ' reconnected! 🔌', '#888'));
@@ -332,6 +361,8 @@
     hide($('#gameArea'));
     hide($('#gameHud'));
     renderWaitingPlayers(data.players);
+    const roundsCfg = $('#roundsConfig');
+    if (roundsCfg) { if (isOwner) show(roundsCfg); else hide(roundsCfg); }
     show($('#waitingScreen'));
     hide($('#gameOverOverlay'));
   });
@@ -341,6 +372,7 @@
   // ── Intro card ──
   socket.on('miniGameIntro', data => {
     stopTimer();
+    hide($('#nextRoundArea'));
     showScreen('#introScreen');
     show($('#introScreen'));
     const emojiEl = $('#introEmoji'); if (emojiEl) emojiEl.textContent = data.emoji;
@@ -350,6 +382,9 @@
     if (bar) { bar.style.animation = 'none'; bar.offsetHeight; bar.style.animation = ''; }
     // Update HUD label
     const hudMG = $('#hudMiniGame'); if (hudMG) hudMG.textContent = data.emoji + ' ' + data.name;
+    // Update HUD round counter
+    const hudRound = $('#hudRound');
+    if (hudRound && data.totalRounds) hudRound.textContent = data.round + '/' + data.totalRounds;
     // Ensure HUD visible during game
     show($('#gameHud'));
   });
@@ -602,6 +637,14 @@
   socket.on('drawGuessStart', data => {
     stopTimer();
     hasVoted = false;
+    // Copy drawing to the guess canvas so voters can see the drawing
+    const srcCanvas = document.getElementById('coupleCanvas');
+    const dstCanvas = document.getElementById('coupleGuessCanvas');
+    if (srcCanvas && dstCanvas) {
+      dstCanvas.width = srcCanvas.width;
+      dstCanvas.height = srcCanvas.height;
+      dstCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
+    }
     showMiniGame('drawGuessScreen');
     const grid = $('#captionGrid');
     if (grid) {
@@ -617,11 +660,33 @@
 
   socket.on('drawReveal', data => {
     stopTimer();
+    // Copy drawing to the reveal canvas
+    const srcCanvas = document.getElementById('coupleCanvas');
+    const revCanvas = document.getElementById('coupleRevealCanvas');
+    if (srcCanvas && revCanvas) {
+      revCanvas.width = srcCanvas.width;
+      revCanvas.height = srcCanvas.height;
+      revCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
+    }
     showMiniGame('drawRevealScreen');
     const roast = $('#roastCard');
     if (roast) roast.innerHTML = '"' + esc(data.roast) + '"<br><span style="font-size:12px;color:#888;font-style:normal">— the community</span>';
     const winner = $('#drawRevealWinner');
     if (winner) winner.textContent = data.winningCaption ? '🏆 Top caption: ' + data.winningCaption : 'No captions submitted!';
+  });
+
+  // ── Ready for next round ──
+  socket.on('readyForNext', () => {
+    stopTimer();
+    const area = $('#nextRoundArea'); if (!area) return;
+    show(area);
+    if (isOwner) {
+      const btn = $('#nextRoundBtn'); const wait = $('#nextRoundWait');
+      show(btn); hide(wait);
+    } else {
+      const btn = $('#nextRoundBtn'); const wait = $('#nextRoundWait');
+      hide(btn); show(wait);
+    }
   });
 
   // ── Game Over ──

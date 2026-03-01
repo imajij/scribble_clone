@@ -25,7 +25,7 @@ class DrawingCanvas {
   resizeCanvas() {
     const container = this.canvas.parentElement;
     const w = container.clientWidth;
-    const h = Math.min(container.clientHeight, window.innerHeight * 0.45);
+    const h = Math.max(420, Math.min(container.clientHeight, window.innerHeight * 0.72));
     const saved = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
     this.canvas.width = w;
     this.canvas.height = h;

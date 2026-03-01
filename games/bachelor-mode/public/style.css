@@ -307,3 +307,15 @@
   #gameArea { flex-direction: column; }
   .game-hud { flex-wrap: wrap; }
 }
+
+/* ── Rounds Config ── */
+.rounds-config { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; justify-content: center; }
+.rounds-config label { font-size: 14px; color: var(--text-dim, #aaa); font-weight: 600; }
+.rounds-select { background: rgba(255,255,255,0.08); color: #fff; border: 1.5px solid rgba(168,85,247,0.4); border-radius: 8px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
+.rounds-select:focus { outline: none; border-color: #a855f7; }
+
+/* ── Next Round Area ── */
+.next-round-area { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-top: 12px; }
+
+/* ── HUD Round Counter ── */
+.hud-round { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5); letter-spacing: 0.5px; }

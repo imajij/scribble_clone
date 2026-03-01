@@ -78,9 +78,10 @@ class BachelorGame {
   }
 
   // ── Game flow ──
-  startGame() {
+  startGame(totalRounds = 6) {
     this.state = 'playing';
     this.miniGameIndex = -1;
+    this.totalRounds = Math.max(1, Math.min(20, totalRounds));
     // Shuffle mini-game order
     this.miniGames = [...this.miniGames].sort(() => Math.random() - 0.5);
     this.chaosScore = 0;
@@ -88,11 +89,12 @@ class BachelorGame {
 
   nextMiniGame() {
     this.miniGameIndex++;
-    if (this.miniGameIndex >= this.miniGames.length) {
+    if (this.miniGameIndex >= this.totalRounds) {
       this.state = 'gameover';
       return null;
     }
-    this.currentMiniGame = this.miniGames[this.miniGameIndex];
+    // Cycle through mini-games if totalRounds > miniGames.length
+    this.currentMiniGame = this.miniGames[this.miniGameIndex % this.miniGames.length];
     this.votes = {};
     this.submissions = [];
     this.ratings = {};

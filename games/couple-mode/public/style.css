@@ -136,6 +136,17 @@ body {
 .room-id   { font-weight: 700; letter-spacing: 2px; color: var(--couple-accent); }
 .room-info { font-size: 12px; color: var(--text-muted); }
 
+.selected-game-badge {
+  background: rgba(255,107,157,0.12);
+  border: 1.5px solid var(--couple-accent);
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--couple-accent);
+  margin-bottom: 4px;
+}
+
 /* ── Waiting ── */
 .waiting-wrap { max-width: 480px; margin: 0 auto; padding: 32px 16px; text-align: center; }
 .waiting-wrap h2 { font-size: 24px; margin-bottom: 4px; }
@@ -181,12 +192,12 @@ body {
 /* ── Game Layout ── */
 .game-area { height: calc(100vh - 60px); }
 .game-layout {
-  display: grid; grid-template-columns: 180px 1fr 220px;
+  display: grid; grid-template-columns: 1fr 180px;
   height: 100%; gap: 0;
 }
 @media (max-width: 768px) {
-  .game-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
-  .score-panel, .chat-panel { max-height: 140px; }
+  .game-layout { grid-template-columns: 1fr; grid-template-rows: 1fr auto; }
+  .chat-panel { max-height: 140px; }
 }
 
 /* ── Score panel ── */
@@ -206,12 +217,13 @@ body {
 
 /* ── Center Stage ── */
 .center-stage {
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px; overflow-y: auto;
+  display: flex; align-items: flex-start; justify-content: center;
+  padding: 16px 24px; overflow-y: auto;
+  height: 100%;
 }
 .minigame-screen {
-  width: 100%; max-width: 560px;
-  display: flex; flex-direction: column; gap: 16px;
+  width: 100%; max-width: 860px;
+  display: flex; flex-direction: column; gap: 14px;
   align-items: center; text-align: center;
 }
 
@@ -293,8 +305,8 @@ body {
 .telepathy-hint { color: var(--text-muted); font-size: 14px; }
 
 /* ── Draw ── */
-.canvas-wrap { width: 100%; border-radius: var(--radius); overflow: hidden; background: #fff; border: 2px solid rgba(255,107,157,0.3); }
-#coupleCanvas { display: block; width: 100%; }
+.canvas-wrap { width: 100%; border-radius: var(--radius); overflow: hidden; background: #fff; border: 2px solid rgba(255,107,157,0.3); min-height: 420px; }
+#coupleCanvas { display: block; width: 100%; min-height: 420px; }
 .draw-instructions {
   background: rgba(255,107,157,0.1); border: 1px solid var(--couple-accent);
   border-radius: 10px; padding: 12px 16px; font-size: 15px; font-weight: 600;
@@ -332,11 +344,12 @@ body {
 .chat-panel {
   background: var(--surface); border-left: 1px solid #222;
   display: flex; flex-direction: column;
+  width: 180px; min-width: 150px;
+  height: 100%;
 }
 .chat-messages {
-  flex: 1; padding: 12px; overflow-y: auto;
+  flex: 1; padding: 10px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 6px;
-  max-height: calc(100vh - 200px);
 }
 .chat-msg { font-size: 13px; line-height: 1.4; }
 .chat-msg .chat-name { color: var(--couple-accent); font-weight: 700; margin-right: 4px; }
@@ -387,3 +400,18 @@ body {
 /* ── Transitions ── */
 .minigame-screen { animation: fadeIn 0.3s ease; }
 @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── Rounds Config ── */
+.rounds-config { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; justify-content: center; }
+.rounds-config label { font-size: 14px; color: var(--text-muted); font-weight: 600; }
+.rounds-select { background: rgba(255,255,255,0.1); color: var(--text); border: 1.5px solid rgba(255,107,157,0.4); border-radius: 8px; padding: 6px 12px; font-size: 14px; cursor: pointer; }
+.rounds-select:focus { outline: none; border-color: var(--primary); }
+
+/* ── Next Round Area ── */
+.next-round-area { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 16px; margin-top: 12px; }
+
+/* ── HUD Round Counter ── */
+.hud-round { font-size: 12px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px; }
+
+/* ── Read-only Canvas (draw guess/reveal) ── */
+.canvas-readonly { width: 100%; border-radius: var(--radius); overflow: hidden; background: #fff; border: 2px solid rgba(255,107,157,0.2); margin-bottom: 12px; pointer-events: none; }

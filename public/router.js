@@ -292,12 +292,12 @@ function loadHome() {
 var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder'];
 
 var COUPLE_MINIGAMES = [
-  { icon: '\u{1F5F3}\u{FE0F}', name: "Who's More Likely",      desc: 'Vote which of you is more likely to do it.',         color: '#ff6b9d' },
-  { icon: '\u{1F3A8}',         name: 'Draw Your Partner',       desc: 'Draw each other from memory. Chaos guaranteed.',     color: '#a855f7' },
-  { icon: '\u{1F6A9}',         name: 'Red Flag or Green Flag',  desc: 'Is it a red flag or green flag? The group decides.', color: '#ef4444' },
-  { icon: '\u{1F4AC}',         name: 'Finish The Sentence',     desc: 'Complete the prompt — see if your answers match.',   color: '#f59e0b' },
-  { icon: '\u{1F48B}',         name: 'Truth or Skip',           desc: 'Answer the spicy truth or skip and lose points.',    color: '#ec4899' },
-  { icon: '\u{1F9E0}',         name: 'Couple Telepathy',        desc: 'Think alike? Answer the same and score big.',        color: '#22c55e' },
+  { id: 'wml',      icon: '\u{1F5F3}\u{FE0F}', name: "Who's More Likely",      desc: 'Vote which of you is more likely to do it.',         color: '#ff6b9d' },
+  { id: 'draw',     icon: '\u{1F3A8}',         name: 'Draw Your Partner',       desc: 'Draw each other from memory. Chaos guaranteed.',     color: '#a855f7' },
+  { id: 'rfgf',     icon: '\u{1F6A9}',         name: 'Red Flag or Green Flag',  desc: 'Is it a red flag or green flag? The group decides.', color: '#ef4444' },
+  { id: 'fts',      icon: '\u{1F4AC}',         name: 'Finish The Sentence',     desc: 'Complete the prompt — see if your answers match.',   color: '#f59e0b' },
+  { id: 'tos',      icon: '\u{1F48B}',         name: 'Truth or Skip',           desc: 'Answer the spicy truth or skip and lose points.',    color: '#ec4899' },
+  { id: 'telepathy',icon: '\u{1F9E0}',         name: 'Couple Telepathy',        desc: 'Think alike? Answer the same and score big.',        color: '#22c55e' },
 ];
 
 function loadCoupleLobby() {
@@ -322,6 +322,12 @@ function loadCoupleLobby() {
     card.href = '/couple-game';
     card.setAttribute('data-spa', '');
     card.className = 'game-card';
+    card.addEventListener('mousedown', function() {
+      sessionStorage.setItem('selectedCoupleGame', mg.id);
+    });
+    card.addEventListener('click', function() {
+      sessionStorage.setItem('selectedCoupleGame', mg.id);
+    });
     card.style.setProperty('--card-accent', mg.color);
     card.innerHTML =
       '<div class="card-icon">' + mg.icon + '</div>' +
