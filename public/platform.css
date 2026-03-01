@@ -296,6 +296,12 @@ footer {
   margin-bottom: 8px;
 }
 
+.hub-title-bachelor {
+  background: linear-gradient(135deg, #a855f7, #4ade80);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
 .hub-sub {
   color: var(--text-muted);
   font-size: 1.1rem;

@@ -71,9 +71,9 @@ const ROUTES = {
     icon: '\u{1F491}',
     color: '#ff6b9d',
   },
-  '/bachelor': {
+  '/bachelor-game': {
     gameId: 'bachelor-mode',
-    assetBase: '/bachelor',
+    assetBase: '/bachelor-game',
     scripts: ['canvas.js', 'app.js'],
     icon: '\u{1F37B}',
     color: '#a855f7',
@@ -118,6 +118,8 @@ function navigate(path, pushState) {
     loadHome();
   } else if (path === '/couple') {
     loadCoupleLobby();
+  } else if (path === '/bachelor') {
+    loadBachelorLobby();
   } else if (ROUTES[path]) {
     loadGame(path);
   } else {
@@ -243,6 +245,7 @@ var ICONS = {
   'dare-roulette':  '\u{1F3B0}',
   'story-builder':  '\u{1F4DD}',
   'couple-mode':    '\u{1F491}',
+  'bachelor-mode':  '\u{1F37B}',
 };
 
 var COLORS = {
@@ -254,6 +257,7 @@ var COLORS = {
   'dare-roulette':  '#f59e0b',
   'story-builder':  '#7f5af0',
   'couple-mode':    '#ff6b9d',
+  'bachelor-mode':  '#a855f7',
 };
 
 function loadHome() {
@@ -285,7 +289,16 @@ function loadHome() {
 // Couple lobby (game hub)
 // ============================================================
 
-var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder', 'couple-mode'];
+var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder'];
+
+var COUPLE_MINIGAMES = [
+  { icon: '\u{1F5F3}\u{FE0F}', name: "Who's More Likely",      desc: 'Vote which of you is more likely to do it.',         color: '#ff6b9d' },
+  { icon: '\u{1F3A8}',         name: 'Draw Your Partner',       desc: 'Draw each other from memory. Chaos guaranteed.',     color: '#a855f7' },
+  { icon: '\u{1F6A9}',         name: 'Red Flag or Green Flag',  desc: 'Is it a red flag or green flag? The group decides.', color: '#ef4444' },
+  { icon: '\u{1F4AC}',         name: 'Finish The Sentence',     desc: 'Complete the prompt — see if your answers match.',   color: '#f59e0b' },
+  { icon: '\u{1F48B}',         name: 'Truth or Skip',           desc: 'Answer the spicy truth or skip and lose points.',    color: '#ec4899' },
+  { icon: '\u{1F9E0}',         name: 'Couple Telepathy',        desc: 'Think alike? Answer the same and score big.',        color: '#22c55e' },
+];
 
 function loadCoupleLobby() {
   document.title = 'Couple Mode \u{1F491} | After Dark Games';
@@ -300,23 +313,39 @@ function loadCoupleLobby() {
       '<div class="home-grid" id="homeGrid"></div>' +
     '</div>';
 
+  var grid = document.getElementById('homeGrid');
+  if (!grid) return;
+
+  // 6 couple-mode mini-games as direct cards → all link to /couple-game lobby
+  COUPLE_MINIGAMES.forEach(function(mg) {
+    var card = document.createElement('a');
+    card.href = '/couple-game';
+    card.setAttribute('data-spa', '');
+    card.className = 'game-card';
+    card.style.setProperty('--card-accent', mg.color);
+    card.innerHTML =
+      '<div class="card-icon">' + mg.icon + '</div>' +
+      '<h2 class="card-title">' + mg.name + '</h2>' +
+      '<p class="card-desc">' + mg.desc + '</p>' +
+      '<div class="card-meta">' +
+        '<span class="meta-badge">realtime</span>' +
+        '<span class="meta-players">2\u201310 players</span>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+
+  // Other standalone couple games from registry
   fetch('/api/games')
     .then(function(res) { return res.json(); })
     .then(function(games) {
-      var grid = document.getElementById('homeGrid');
-      if (!grid) return;
       var coupleGames = games.filter(function(g) { return COUPLE_GAME_IDS.indexOf(g.id) !== -1; });
       coupleGames.forEach(function(game) {
         var icon  = ICONS[game.id] || '\u{1F3AE}';
         var color = COLORS[game.id] || '#a855f7';
         var spaRoute = ID_TO_ROUTE[game.id];
         var card = document.createElement('a');
-        if (spaRoute) {
-          card.href = spaRoute;
-          card.setAttribute('data-spa', '');
-        } else {
-          card.href = game.route;
-        }
+        card.href = spaRoute || game.route;
+        if (spaRoute) card.setAttribute('data-spa', '');
         card.className = 'game-card';
         card.style.setProperty('--card-accent', color);
         card.innerHTML =
@@ -334,16 +363,58 @@ function loadCoupleLobby() {
         grid.appendChild(card);
       });
     })
-    .catch(function() {
-      var grid = document.getElementById('homeGrid');
-      if (grid) grid.innerHTML = '<p class="spa-loading">Could not load games. Try refreshing.</p>';
-    });
+    .catch(function() {});
   setupPlatformSocket();
 }
 
 // ============================================================
-// Age gate
+// Bachelor lobby (game hub)
 // ============================================================
+
+var BACHELOR_GAME_IDS = ['bachelor-mode'];
+
+var BACHELOR_MINIGAMES = [
+  { id: 'sus',         icon: '\u{1F58A}\u{FE0F}', name: 'Sus Drawing',     desc: 'Draw something unspeakable. Others guess.',      color: '#a855f7' },
+  { id: 'caption',     icon: '\u{1F4AC}',          name: 'Caption Battle',  desc: 'Caption the chaos. Vote for the best one.',      color: '#ec4899' },
+  { id: 'excuse',      icon: '\u{1F64F}',          name: 'Excuse Machine',  desc: 'Come up with the wildest excuse. No shame.',     color: '#f59e0b' },
+  { id: 'rizz',        icon: '\u{1F525}',          name: 'Rizz Check',      desc: 'Rate each other\u2019s rizz. Brutally honest.',  color: '#ef4444' },
+  { id: 'liedetector', icon: '\u{1F976}',          name: 'Lie Detector',    desc: 'Truth or cap? The group decides.',               color: '#22c55e' },
+  { id: 'drunklogic',  icon: '\u{1F37A}',          name: 'Drunk Logic',     desc: 'Answer questions with peak drunk energy.',       color: '#3b82f6' },
+];
+
+function loadBachelorLobby() {
+  document.title = 'Bachelor Mode \u{1F37B} | After Dark Games';
+  container.innerHTML =
+    '<div class="hub-wrap">' +
+      '<div class="hub-hero hub-bachelor">' +
+        '<a href="/" class="hub-back" data-spa>\u2190 Home</a>' +
+        '<div class="hub-icon">\u{1F37B}</div>' +
+        '<h1 class="hub-title hub-title-bachelor">Bachelor Mode</h1>' +
+        '<p class="hub-sub">Pick a game \u2014 jump straight in</p>' +
+      '</div>' +
+      '<div class="home-grid" id="homeGrid"></div>' +
+    '</div>';
+
+  var grid = document.getElementById('homeGrid');
+  if (!grid) return;
+
+  BACHELOR_MINIGAMES.forEach(function(mg) {
+    var card = document.createElement('a');
+    card.href = '/bachelor-game';
+    card.setAttribute('data-spa', '');
+    card.className = 'game-card';
+    card.style.setProperty('--card-accent', mg.color);
+    card.innerHTML =
+      '<div class="card-icon">' + mg.icon + '</div>' +
+      '<h2 class="card-title">' + mg.name + '</h2>' +
+      '<p class="card-desc">' + mg.desc + '</p>' +
+      '<div class="card-meta">' +
+        '<span class="meta-badge">realtime</span>' +
+        '<span class="meta-players">2\u201310 players</span>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
 
 function showAgeGate() {
   if (!ageGateEl) return;

@@ -100,7 +100,7 @@ const games = [
     name: 'Bachelor Mode 🍻',
     description: 'Absolute brainrot — Sus Drawing, Rate the Rizz, Lie Detector and more unhinged chaos.',
     thumbnail: '/bachelor-mode/thumbnail.png',
-    route: '/bachelor',
+    route: '/bachelor-game',
     type: 'realtime',
     minPlayers: 2,
     maxPlayers: 10,

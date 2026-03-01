@@ -211,7 +211,7 @@
   }
 
   // ── Lobby wiring ──
-  $('#createRoomBtn').addEventListener('click', () => {
+  $('#playNowBtn').addEventListener('click', () => {
     const name = (($('#playerName') && $('#playerName').value) || '').trim();
     if (!name) { alert('Enter your name first!'); return; }
     myName = name;
