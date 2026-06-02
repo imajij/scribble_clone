@@ -80,8 +80,10 @@ export class ChaosMeter {
       '<div class="cfa-box">' +
       '<div class="cfa-header">⚠️ Warning</div>' +
       '<div class="cfa-body">This lobby has reached critical chaos levels.<br>Authorities have been notified.</div>' +
-      '<button class="cfa-btn" onclick="this.parentElement.parentElement.remove()">Dismiss 💀</button>' +
+      '<button class="cfa-btn" type="button">Dismiss 💀</button>' +
       '</div>';
+    const dismiss = overlay.querySelector('.cfa-btn');
+    if (dismiss) dismiss.addEventListener('click', () => overlay.remove());
     document.body.appendChild(overlay);
     setTimeout(() => overlay.remove(), 5000);
   }

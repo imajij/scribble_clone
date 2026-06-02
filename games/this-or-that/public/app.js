@@ -129,7 +129,7 @@
       updateStartBtn(data.players.length, data.owner);
     } else if (data.state === 'voting' && data.currentQuestion) {
       showScreen('game');
-      showVoting(data.currentQuestion, data.roundNum, data.maxRounds);
+      showVoting(data.currentQuestion, data.roundNum, data.maxRounds, data.players.length);
     }
   });
 
@@ -156,6 +156,15 @@
     // Update start button visibility
     const players = document.querySelectorAll('.player-chip');
     updateStartBtn(players.length, owner);
+
+    // If the game-over overlay is open, re-gate the Play Again button so a
+    // newly-promoted host can restart (and a demoted one cannot).
+    const overlay = $('#gameOverOverlay');
+    const againBtn = $('#playAgainBtn');
+    if (overlay && !overlay.classList.contains('hidden') && againBtn) {
+      if (isOwner) { show(againBtn); againBtn.disabled = false; againBtn.textContent = 'Play Again'; }
+      else hide(againBtn);
+    }
   });
 
   socket.on('playerList', (players) => {
@@ -165,7 +174,7 @@
 
   socket.on('newRound', (data) => {
     showScreen('game');
-    showVoting(data.question, data.roundNum, data.maxRounds);
+    showVoting(data.question, data.roundNum, data.maxRounds, data.total);
     startTimer(data.voteDuration);
   });
 
@@ -270,7 +279,7 @@
     }).join('');
   }
 
-  function showVoting(question, roundNum, maxRounds) {
+  function showVoting(question, roundNum, maxRounds, total) {
     myVote = null;
 
     // Update round info
@@ -299,7 +308,8 @@
     btnA.disabled = false;
     btnB.disabled = false;
 
-    $('#voteStatus').textContent = '0/' + 0 + ' voted';
+    const denom = (typeof total === 'number' && total > 0) ? total : 0;
+    $('#voteStatus').textContent = `0/${denom} voted`;
   }
 
   function showResults(data) {
@@ -353,6 +363,20 @@
   function showGameOver(results) {
     const overlay = $('#gameOverOverlay');
     show(overlay);
+
+    // Only the host can restart — gate the Play Again button by ownership
+    // (mirrors the server-side owner check on the 'playAgain' event).
+    const againBtn = $('#playAgainBtn');
+    if (againBtn) {
+      if (isOwner) {
+        show(againBtn);
+        againBtn.disabled = false;
+        againBtn.textContent = 'Play Again';
+      } else {
+        hide(againBtn);
+      }
+    }
+
     const scoresEl = $('#finalScores');
     scoresEl.innerHTML = results.map((p, i) => {
       const medal = MEDALS[i] || `#${i + 1}`;

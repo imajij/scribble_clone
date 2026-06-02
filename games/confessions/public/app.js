@@ -210,7 +210,7 @@
     // Auto-submit guess when timer expires (pick first available option)
     startTimer(duration, () => {
       if (!myGuess) {
-        const firstBtn = $('#guessGrid .guess-btn:not(.is-me):not([disabled])');
+        const firstBtn = $('#guessGrid .guess-btn:not(.is-me)');
         if (firstBtn) firstBtn.click();
       }
     });
@@ -246,8 +246,9 @@
     guessesEl.innerHTML = data.results.map(r => {
       const icon = r.correct ? '✅' : '❌';
       const cls = r.correct ? 'correct' : 'wrong';
+      const bonus = r.streakBonus ? `<span class="streak-bonus">🔥 ${r.streak} streak · +${r.streakBonus}</span>` : '';
       return `<div class="reveal-guess-row ${cls}">` +
-        `<span>${esc(r.name)} guessed ${esc(r.guessName)}</span>` +
+        `<span>${esc(r.name)} guessed ${esc(r.guessName)}${bonus}</span>` +
         `<span class="guess-result-icon">${icon}</span>` +
         `</div>`;
     }).join('');
@@ -257,8 +258,12 @@
 
   // ── Phase Change ──
   socket.on('phaseChange', ({ phase, duration }) => {
-    if (phase === 'guessing' && duration) {
-      // Timer already started in guessPhase handler
+    // Submit and guess countdowns are started by their own phase handlers
+    // (they need the auto-submit callback). The reveal pause has no dedicated
+    // handler to drive the countdown, so start it here from the duration the
+    // server now sends, instead of leaving a frozen timer for the pause.
+    if (phase === 'reveal' && duration) {
+      startTimer(duration, null);
     }
   });
 
@@ -318,12 +323,12 @@
   function updateStartBtn(count) {
     const btn = $('#startGameBtn');
     if (!btn) return;
-    if (count >= 3 && isOwner) {
-      btn.disabled = false;
-      btn.textContent = '🚀 Start Game!';
-    } else if (count < 2) {
+    if (count < 2) {
       btn.disabled = true;
       btn.textContent = 'Need 2+ players to start';
+    } else if (isOwner) {
+      btn.disabled = false;
+      btn.textContent = '🚀 Start Game!';
     } else {
       btn.disabled = true;
       btn.textContent = 'Waiting for host to start...';
@@ -350,6 +355,17 @@
       const medal = MEDALS[i] || `#${i + 1}`;
       return `<div class="final-score-row"><span><span class="final-rank">${medal}</span> ${esc(p.name)}</span><span class="final-pts">${p.score}</span></div>`;
     }).join('');
+    // Only the host may restart the game (server enforces this too).
+    const againBtn = $('#playAgainBtn');
+    if (againBtn) {
+      if (isOwner) {
+        show(againBtn);
+        againBtn.disabled = false;
+        againBtn.textContent = 'Play Again';
+      } else {
+        hide(againBtn);
+      }
+    }
   }
 
   // ═══════════════════════════════════════════

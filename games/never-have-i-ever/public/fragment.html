@@ -1,0 +1,136 @@
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-header">
+      <h1 class="logo">Never Have I Ever 🙈</h1>
+      <p class="subtitle">Tap your sins — the group sees everything</p>
+    </div>
+    <div class="lobby-form">
+      <div class="input-group">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" placeholder="Enter your name..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="lobby-actions">
+        <button id="createRoomBtn" class="btn btn-primary"><span class="btn-icon">🙈</span> Create Room</button>
+        <div class="divider"><span>OR</span></div>
+        <div class="join-row">
+          <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="6" class="room-code-input">
+          <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+      <div class="room-settings">
+        <div class="setting-row">
+          <label>Rounds:</label>
+          <div class="selector">
+            <button class="sel-btn" data-rounds="5">5</button>
+            <button class="sel-btn active" data-rounds="7">7</button>
+            <button class="sel-btn" data-rounds="10">10</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <label>Heat 🌶️:</label>
+          <div class="selector">
+            <button class="heat-btn" data-heat="1">Mild</button>
+            <button class="heat-btn active" data-heat="2">Spicy</button>
+            <button class="heat-btn" data-heat="3">Extreme</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="activeRooms" class="active-rooms hidden">
+      <h3>🙈 Active Rooms</h3>
+      <div id="roomListContainer" class="room-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting Room -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-container">
+    <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+    <p class="share-text">Share this code — the more sinners, the better!</p>
+    <div id="waitingPlayers" class="player-grid"></div>
+    <div class="waiting-actions">
+      <button id="startGameBtn" class="btn btn-primary btn-large" disabled>Need 2+ players to start</button>
+      <p class="player-count">Players: <span id="playerCount">0</span>/16</p>
+    </div>
+  </div>
+</div>
+
+<!-- Game Screen -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-layout">
+    <div class="players-panel">
+      <div class="round-info">Round <span id="roundDisplay">1</span> / <span id="maxRoundDisplay">7</span></div>
+      <div id="playerList" class="player-list"></div>
+    </div>
+
+    <div class="center-stage">
+      <div class="top-bar">
+        <div id="phaseLabel" class="phase-label">Confess!</div>
+        <div id="timerDisplay" class="timer">15</div>
+      </div>
+
+      <!-- Picking Phase -->
+      <div id="pickingPhase" class="hidden">
+        <div class="question-card">
+          <span id="promptBadge" class="q-badge spicy">Spicy 🌶️</span>
+          <p class="nhie-prefix">Never have I ever...</p>
+          <p id="promptText" class="nhie-prompt">...</p>
+        </div>
+
+        <div class="pick-buttons">
+          <button id="pickHaveBtn" class="pick-btn pick-have">
+            <span class="pick-emoji">🙋</span>
+            <span class="pick-label">I have</span>
+          </button>
+          <button id="pickNeverBtn" class="pick-btn pick-never">
+            <span class="pick-emoji">🙅</span>
+            <span class="pick-label">Never</span>
+          </button>
+        </div>
+
+        <p id="pickStatus" class="pick-status"></p>
+      </div>
+
+      <!-- Reveal Phase -->
+      <div id="revealPhase" class="hidden">
+        <div class="reveal-card">
+          <p id="revealPrompt" class="reveal-prompt">Never have I ever...</p>
+          <div class="reveal-split">
+            <div id="revealHave" class="reveal-side reveal-side-have">
+              <div class="reveal-emoji">🙋</div>
+              <div id="revealCountHave" class="reveal-count">0</div>
+              <div class="reveal-side-label">I have</div>
+              <div id="revealNamesHave" class="reveal-names"></div>
+            </div>
+            <div id="revealNever" class="reveal-side reveal-side-never">
+              <div class="reveal-emoji">🙅</div>
+              <div id="revealCountNever" class="reveal-count">0</div>
+              <div class="reveal-side-label">Never</div>
+              <div id="revealNamesNever" class="reveal-names"></div>
+            </div>
+          </div>
+          <div id="revealVerdict" class="reveal-verdict"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-panel">
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Chat..." maxlength="200" autocomplete="off">
+        <button id="sendBtn" class="btn btn-send">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="game-over-card">
+    <h1>🙈 The Verdict</h1>
+    <div id="finalScores" class="final-scores"></div>
+    <button id="playAgainBtn" class="btn btn-primary btn-large">Play Again</button>
+  </div>
+</div>

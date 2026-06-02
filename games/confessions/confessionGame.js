@@ -139,9 +139,19 @@ class ConfessionGame {
     this.prompts = getRandomPrompts(this.heatLevel, count, this.usedPrompts);
     this.prompts.forEach(p => this.usedPrompts.add(p.text));
 
-    // If we don't have enough unique prompts, reuse
-    while (this.prompts.length < count) {
-      this.prompts.push(this.prompts[this.prompts.length % Math.max(1, this.prompts.length)]);
+    // If we don't have enough unique prompts, reuse by cycling the pool so
+    // the duplicate slots actually vary instead of all being prompts[0].
+    const base = this.prompts.length;
+    if (base > 0) {
+      while (this.prompts.length < count) {
+        const i = this.prompts.length - base;
+        this.prompts.push(this.prompts[i % base]);
+      }
+    } else {
+      // No prompts available at all — fall back to a generic placeholder.
+      while (this.prompts.length < count) {
+        this.prompts.push({ text: 'Confess something…', heat: this.heatLevel });
+      }
     }
 
     // Map prompts to players
@@ -257,10 +267,17 @@ class ConfessionGame {
       const guess = this.guesses.get(player.id);
       const correct = guess === c.authorId;
 
+      // Streak persists per-player across confessions within a game; it is
+      // only reset in startGame(). Increment on a correct guess, reset on a
+      // wrong one. Award the +50 bonus whenever the running streak is 3+.
+      let streakBonus = 0;
       if (correct) {
         player.score += 100;
         player.streak++;
-        if (player.streak >= 3) player.score += 50; // streak bonus
+        if (player.streak >= 3) {
+          streakBonus = 50;
+          player.score += streakBonus;
+        }
       } else {
         player.streak = 0;
         fooledCount++;
@@ -274,6 +291,7 @@ class ConfessionGame {
         correct,
         score: player.score,
         streak: player.streak,
+        streakBonus,
       });
     });
 

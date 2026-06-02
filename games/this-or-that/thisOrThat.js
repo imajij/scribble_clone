@@ -111,8 +111,19 @@ class ThisOrThatGame {
       score: player.score,
       streak: player.streak,
     });
+    const wasOwner = this.owner === socketId;
     this.players.delete(socketId);
     this.votes.delete(socketId);
+
+    // Transfer ownership to a live player if the host was the one held.
+    // (The held seat keeps its sessionId in disconnectedPlayers; if that
+    //  player reconnects, reconnectPlayer only restores ownership when
+    //  ownerSessionId still points at them, which it no longer does.)
+    if (wasOwner && this.players.size > 0) {
+      const next = this.players.keys().next().value;
+      this.owner = next;
+      this.ownerSessionId = this.players.get(next).sessionId;
+    }
     return player;
   }
 
@@ -174,6 +185,7 @@ class ThisOrThatGame {
         heat: q.heat,
       },
       voteDuration: this.voteDuration,
+      total: this.players.size, // active players who can vote this round
     };
   }
 

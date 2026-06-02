@@ -34,6 +34,27 @@ function register(io) {
     return Math.random().toString(36).slice(2, 6).toUpperCase();
   }
 
+  // Every flow setTimeout is tracked on the game so it can be cancelled when
+  // the room advances, resets, or empties. Callbacks re-check the room exists.
+  function clearTimers(game) {
+    if (!game || !game._timers) return;
+    game._timers.forEach(t => clearTimeout(t));
+    game._timers = [];
+  }
+
+  function schedule(roomId, fn, delay) {
+    const game = rooms.get(roomId);
+    if (!game) return;
+    if (!game._timers) game._timers = [];
+    const t = setTimeout(() => {
+      const g = rooms.get(roomId);
+      if (!g) return;                       // room gone — abort
+      if (g._timers) g._timers = g._timers.filter(x => x !== t);
+      fn(g);
+    }, delay);
+    game._timers.push(t);
+  }
+
   function buildPayload(game, roomId, playerId, isReconnect = false) {
     return {
       roomId,
@@ -50,6 +71,7 @@ function register(io) {
   function advanceMiniGame(roomId) {
     const game = rooms.get(roomId);
     if (!game) return;
+    clearTimers(game);   // cancel any pending timers from the previous mini-game
     const next = game.nextMiniGame();
     if (!next) {
       // All rounds complete — game over
@@ -64,7 +86,7 @@ function register(io) {
       round: game.miniGameIndex,       // 1-based (already incremented)
       totalRounds: game.totalRounds,
     });
-    setTimeout(() => startMiniGame(roomId), INTRO_DURATION);
+    schedule(roomId, () => startMiniGame(roomId), INTRO_DURATION);
   }
 
   function startMiniGame(roomId) {
@@ -92,7 +114,7 @@ function register(io) {
     // Tell drawer their private prompt
     const drawerSocket = getSocketByPlayerId(roomId, info.drawerId);
     if (drawerSocket) drawerSocket.emit('susYourPrompt', { prompt: info.prompt });
-    setTimeout(() => finishSusDrawing(roomId), DURATIONS.sus_drawing);
+    schedule(roomId, () => finishSusDrawing(roomId), DURATIONS.sus_drawing);
   }
 
   function finishSusDrawing(roomId) {
@@ -101,10 +123,27 @@ function register(io) {
     nsp.to(roomId).emit('susCaptionStart', {
       duration: DURATIONS.sus_captioning / 1000,
     });
-    setTimeout(() => finishSusCaptioning(roomId), DURATIONS.sus_captioning);
+    schedule(roomId, () => finishSusCaptioning(roomId), DURATIONS.sus_captioning);
   }
 
   function finishSusCaptioning(roomId) {
+    const game = rooms.get(roomId);
+    if (!game || game.currentMiniGame !== 'sus') return;
+    if (game.submissions.length === 0) {
+      // Nobody captioned — skip straight to reveal (no votes to show)
+      finishSusVote(roomId);
+      return;
+    }
+    // Anonymous caption voting (mirrors Caption Battle)
+    const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
+    nsp.to(roomId).emit('susCaptionVoteStart', {
+      submissions: anonymized,
+      duration: DURATIONS.sus_captioning / 1000,
+    });
+    schedule(roomId, () => finishSusVote(roomId), DURATIONS.sus_captioning);
+  }
+
+  function finishSusVote(roomId) {
     const game = rooms.get(roomId);
     if (!game || game.currentMiniGame !== 'sus') return;
     const result = game.endSus();
@@ -125,7 +164,7 @@ function register(io) {
       label: scenario.label,
       duration: DURATIONS.caption_submit / 1000,
     });
-    setTimeout(() => finishCaptionSubmit(roomId), DURATIONS.caption_submit);
+    schedule(roomId, () => finishCaptionSubmit(roomId), DURATIONS.caption_submit);
   }
 
   function finishCaptionSubmit(roomId) {
@@ -142,7 +181,7 @@ function register(io) {
       submissions: anonymized,
       duration: DURATIONS.caption_vote / 1000,
     });
-    setTimeout(() => finishCaptionVote(roomId), DURATIONS.caption_vote);
+    schedule(roomId, () => finishCaptionVote(roomId), DURATIONS.caption_vote);
   }
 
   function finishCaptionVote(roomId) {
@@ -158,7 +197,7 @@ function register(io) {
   function startExcuse(roomId, game) {
     const prompt = game.startExcuse();
     nsp.to(roomId).emit('excuseStart', { prompt, duration: DURATIONS.excuse_submit / 1000 });
-    setTimeout(() => finishExcuseSubmit(roomId), DURATIONS.excuse_submit);
+    schedule(roomId, () => finishExcuseSubmit(roomId), DURATIONS.excuse_submit);
   }
 
   function finishExcuseSubmit(roomId) {
@@ -171,7 +210,7 @@ function register(io) {
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
     nsp.to(roomId).emit('excuseVoteStart', { submissions: anonymized, duration: DURATIONS.excuse_vote / 1000 });
-    setTimeout(() => finishExcuseVote(roomId), DURATIONS.excuse_vote);
+    schedule(roomId, () => finishExcuseVote(roomId), DURATIONS.excuse_vote);
   }
 
   function finishExcuseVote(roomId) {
@@ -187,7 +226,7 @@ function register(io) {
   function startRizz(roomId, game) {
     const prompt = game.startRizz();
     nsp.to(roomId).emit('rizzStart', { prompt, duration: DURATIONS.rizz_submit / 1000 });
-    setTimeout(() => finishRizzSubmit(roomId), DURATIONS.rizz_submit);
+    schedule(roomId, () => finishRizzSubmit(roomId), DURATIONS.rizz_submit);
   }
 
   function finishRizzSubmit(roomId) {
@@ -200,7 +239,7 @@ function register(io) {
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
     nsp.to(roomId).emit('rizzRateStart', { submissions: anonymized, duration: DURATIONS.rizz_rate / 1000 });
-    setTimeout(() => finishRizzRate(roomId), DURATIONS.rizz_rate);
+    schedule(roomId, () => finishRizzRate(roomId), DURATIONS.rizz_rate);
   }
 
   function finishRizzRate(roomId) {
@@ -222,7 +261,7 @@ function register(io) {
       prompt: turn.prompt,
       duration: DURATIONS.lie_statement / 1000,
     });
-    setTimeout(() => finishLieStatement(roomId), DURATIONS.lie_statement);
+    schedule(roomId, () => finishLieStatement(roomId), DURATIONS.lie_statement);
   }
 
   function finishLieStatement(roomId) {
@@ -237,7 +276,7 @@ function register(io) {
       speakerName: game.players.get(game.currentSpeaker)?.name || '?',
       duration: DURATIONS.lie_vote / 1000,
     });
-    setTimeout(() => finishLieVote(roomId), DURATIONS.lie_vote);
+    schedule(roomId, () => finishLieVote(roomId), DURATIONS.lie_vote);
   }
 
   function finishLieVote(roomId) {
@@ -247,8 +286,9 @@ function register(io) {
     nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
     nsp.to(roomId).emit('lieReveal', result);
     if (game.hasMoreLieSpeakers()) {
-      setTimeout(() => {
-        const nextTurn = game._nextLieSpeaker();
+      schedule(roomId, (g) => {
+        if (g.currentMiniGame !== 'liedetector') return;
+        const nextTurn = g._nextLieSpeaker();
         if (!nextTurn) { nsp.to(roomId).emit('readyForNext'); return; }
         nsp.to(roomId).emit('lieStart', {
           speakerId: nextTurn.speakerId,
@@ -256,7 +296,7 @@ function register(io) {
           prompt: nextTurn.prompt,
           duration: DURATIONS.lie_statement / 1000,
         });
-        setTimeout(() => finishLieStatement(roomId), DURATIONS.lie_statement);
+        schedule(roomId, () => finishLieStatement(roomId), DURATIONS.lie_statement);
       }, REVEAL_PAUSE);
     } else {
       nsp.to(roomId).emit('readyForNext');
@@ -267,7 +307,7 @@ function register(io) {
   function startDrunkLogic(roomId, game) {
     const prompt = game.startDrunkLogic();
     nsp.to(roomId).emit('drunkStart', { prompt, duration: DURATIONS.drunk_submit / 1000 });
-    setTimeout(() => finishDrunkSubmit(roomId), DURATIONS.drunk_submit);
+    schedule(roomId, () => finishDrunkSubmit(roomId), DURATIONS.drunk_submit);
   }
 
   function finishDrunkSubmit(roomId) {
@@ -280,7 +320,7 @@ function register(io) {
     }
     const anonymized = game.submissions.map(s => ({ playerId: s.playerId, text: s.text }));
     nsp.to(roomId).emit('drunkVoteStart', { submissions: anonymized, duration: DURATIONS.drunk_vote / 1000 });
-    setTimeout(() => finishDrunkVote(roomId), DURATIONS.drunk_vote);
+    schedule(roomId, () => finishDrunkVote(roomId), DURATIONS.drunk_vote);
   }
 
   function finishDrunkVote(roomId) {
@@ -414,7 +454,7 @@ function register(io) {
       const roomId = playerRooms.get(socket.id);
       const game = rooms.get(roomId);
       if (!game || game.currentMiniGame !== 'sus') return;
-      game.votes[socket._bachPlayerId] = targetId;
+      game.voteSusCaption(socket._bachPlayerId, targetId);
       nsp.to(roomId).emit('voteProgress', { voted: Object.keys(game.votes).length, total: game.getActivePlayers().length });
     });
 
@@ -466,6 +506,12 @@ function register(io) {
       const game = rooms.get(roomId);
       if (!game || game.currentMiniGame !== 'rizz') return;
       game.rateRizz(socket._bachPlayerId, targetId, Math.max(1, Math.min(5, parseInt(rating) || 3)));
+      // Broadcast rating progress so everyone sees X/Y players have rated.
+      // A player counts once they've rated at least one submission; the author
+      // of a submission cannot rate their own, so the denominator excludes them
+      // only when there is a single submission — use active player count as the
+      // simple, room-wide denominator (matches other voting games' UX).
+      nsp.to(roomId).emit('voteProgress', { voted: game.rizzRaterCount(), total: game.getActivePlayers().length });
     });
 
     // Lie Detector
@@ -484,7 +530,9 @@ function register(io) {
       const game = rooms.get(roomId);
       if (!game || game.currentMiniGame !== 'liedetector') return;
       game.voteLie(socket._bachPlayerId, verdict);
-      socket.emit('voteProgress', { voted: Object.keys(game.lieVotes).length, total: game.getActivePlayers().length - 1 });
+      // Broadcast to the whole room (everyone but the speaker votes), so the
+      // X/Y progress is visible to all voters — not just the one who voted.
+      nsp.to(roomId).emit('voteProgress', { voted: Object.keys(game.lieVotes).length, total: game.getActivePlayers().length - 1 });
     });
 
     // Drunk Logic
@@ -528,6 +576,7 @@ function register(io) {
       const roomId = playerRooms.get(socket.id);
       const game = rooms.get(roomId);
       if (!game || game.owner !== socket._bachPlayerId) return;
+      clearTimers(game);
       game.reset();
       nsp.to(roomId).emit('backToLobby', { players: game.getPlayerList() });
     });
@@ -545,7 +594,7 @@ function register(io) {
       const timer = setTimeout(() => {
         game.holdPlayerForReconnect(playerId);
         nsp.to(roomId).emit('playerLeft', { players: game.getPlayerList(), playerName: player.name });
-        if (game.getActivePlayers().length === 0) { rooms.delete(roomId); nsp.emit('roomList', getRoomList()); }
+        if (game.getActivePlayers().length === 0) { clearTimers(game); rooms.delete(roomId); nsp.emit('roomList', getRoomList()); }
         disconnectTimers.delete(playerId);
       }, RECONNECT_GRACE);
       disconnectTimers.set(playerId, timer);

@@ -19,6 +19,8 @@ class Game {
     this.guessedPlayers = new Set();
     this.turnTimer = null;
     this.chooseTimer = null;
+    this.nextTurnTimer = null;      // delay before advancing to the next turn
+    this.hintTimers = [];           // pending hint-reveal timeouts
     this.turnDuration = 80;         // seconds
     this.chooseDuration = 15;       // seconds
     this.turnStartTime = null;
@@ -383,6 +385,11 @@ class Game {
   clearTimers() {
     if (this.turnTimer) { clearTimeout(this.turnTimer); this.turnTimer = null; }
     if (this.chooseTimer) { clearTimeout(this.chooseTimer); this.chooseTimer = null; }
+    if (this.nextTurnTimer) { clearTimeout(this.nextTurnTimer); this.nextTurnTimer = null; }
+    if (this.hintTimers && this.hintTimers.length) {
+      this.hintTimers.forEach(t => clearTimeout(t));
+      this.hintTimers = [];
+    }
   }
 }
 

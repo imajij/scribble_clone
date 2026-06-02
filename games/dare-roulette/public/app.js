@@ -25,7 +25,7 @@
   // ── Settings ──
   let selectedRounds = 3;
   let selectedIntensity = 2;
-  let selectedCategories = ['physical','social','creative','embarrassing','wildcard'];
+  let selectedCategories = ['sensual','romantic','naughty','tease','wildcard'];
 
   // ── Socket ──
   const socket = io('/dare-roulette');
@@ -130,7 +130,7 @@
     if (!list || !list.length) { hide(wrap); return; }
     show(wrap);
     box.innerHTML = list.map(r =>
-      `<div class="room-item" data-room="${r.id}"><span>${r.id}</span><span style="color:var(--muted);font-size:.82rem">${r.players}/10 · ${r.state}</span></div>`
+      `<div class="room-item" data-room="${r.id}"><span>${r.id}</span><span style="color:var(--text-muted);font-size:.82rem">${r.players}/10 · ${r.state}</span></div>`
     ).join('');
     box.querySelectorAll('.room-item').forEach(el => el.addEventListener('click', () => {
       const name = getName(); if (!name) return;
@@ -277,6 +277,12 @@
       return `<div class="f-row${i===0?' first':''}"><span class="f-rank">${m}</span><span class="f-name">${esc(p.name)}</span><span class="f-pts">${p.score}</span></div>`;
     }).join('');
 
+    // Owner-only: gate the Play Again control
+    const againBtn = $('#playAgainBtn');
+    const againWait = $('#playAgainWait');
+    if (isOwner) { show(againBtn); if (againWait) hide(againWait); }
+    else { hide(againBtn); if (againWait) show(againWait); }
+
     currentRoom = null;
     sessionStorage.removeItem('dr-room');
   });
@@ -370,7 +376,7 @@
 
   function renderHistory() {
     const c = $('#historyList');
-    if (!history.length) { c.innerHTML = '<p style="color:var(--muted)">No dares yet.</p>'; return; }
+    if (!history.length) { c.innerHTML = '<p style="color:var(--text-muted)">No dares yet.</p>'; return; }
     c.innerHTML = history.slice().reverse().map(h => {
       const res = h.completed
         ? '<span class="h-result done">✅ Completed (+' + h.points + ')</span>'
@@ -380,7 +386,7 @@
   }
 
   function catLabel(cat) {
-    const m = { physical:'💪 Physical', social:'📱 Social', creative:'🎨 Creative', embarrassing:'😳 Embarrassing', wildcard:'🃏 Wildcard' };
+    const m = { sensual:'💆 Sensual', romantic:'💕 Romantic', naughty:'😈 Naughty', tease:'😏 Tease', wildcard:'🃏 Wildcard' };
     return m[cat] || cat;
   }
 

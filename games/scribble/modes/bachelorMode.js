@@ -129,7 +129,10 @@ function endRound(room, allGuessed) {
     scores: room.getPlayerList()
   });
 
-  setTimeout(() => {
+  room.nextTurnTimer = setTimeout(() => {
+    room.nextTurnTimer = null;
+    // Guard: room must still exist and have enough players to continue
+    if (!room._rooms || !room._rooms.has(roomId)) return;
     if (room.players.size >= 2) _nextTurn(room);
   }, 4000);
 }
@@ -218,12 +221,16 @@ function _startHintTimer(nsp, roomId, room) {
     room.turnDuration * 0.4 * 1000,
     room.turnDuration * 0.65 * 1000
   ];
+  if (!Array.isArray(room.hintTimers)) room.hintTimers = [];
   intervals.forEach((delay, index) => {
-    setTimeout(() => {
+    const t = setTimeout(() => {
+      // Guard: room must still exist in the rooms Map and be mid-draw
+      if (!room._rooms || !room._rooms.has(roomId)) return;
       if (room.state === 'drawing' && room.currentWord) {
         nsp.to(roomId).emit('hint', { hint: room.getPartialHint(index + 1) });
       }
     }, delay);
+    room.hintTimers.push(t);
   });
 }
 

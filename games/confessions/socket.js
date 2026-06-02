@@ -113,6 +113,8 @@ function register(io) {
       // Submit timer
       game.submitTimer = setTimeout(() => {
         game.submitTimer = null;
+        // Re-check the room still exists and is in the submitting phase.
+        if (!rooms.has(roomId) || game.state !== 'submitting') return;
         endSubmitting(nsp, roomId, game);
       }, game.submitDuration * 1000);
     });
@@ -313,6 +315,8 @@ function startNextConfession(nsp, roomId, game) {
   // Guess timer
   game.guessTimer = setTimeout(() => {
     game.guessTimer = null;
+    // Re-check the room still exists and is in the guessing phase.
+    if (!rooms.has(roomId) || game.state !== 'guessing') return;
     endGuessing(nsp, roomId, game);
   }, game.guessDuration * 1000);
 }
@@ -322,12 +326,14 @@ function endGuessing(nsp, roomId, game) {
   if (!reveal) return;
 
   nsp.to(roomId).emit('revealPhase', reveal);
-  nsp.to(roomId).emit('phaseChange', { phase: 'reveal' });
+  nsp.to(roomId).emit('phaseChange', { phase: 'reveal', duration: REVEAL_PAUSE / 1000 });
   nsp.to(roomId).emit('playerList', game.getPlayerList());
 
   // After pause, next confession or game over
   game.revealTimer = setTimeout(() => {
     game.revealTimer = null;
+    // Re-check the room still exists and is in the reveal phase before acting.
+    if (!rooms.has(roomId) || game.state !== 'reveal') return;
     if (game.currentIndex >= game.confessions.length - 1) {
       game.state = 'gameOver';
       nsp.to(roomId).emit('gameOver', { results: game.getFinalResults() });

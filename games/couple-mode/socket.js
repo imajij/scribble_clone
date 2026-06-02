@@ -366,7 +366,11 @@ function advanceMiniGame(nsp, roomId, game) {
   });
 
   // After intro, start the mini-game
-  game.phaseTimer = setTimeout(() => startMiniGame(nsp, roomId, game, next), INTRO_DURATION);
+  game.phaseTimer = setTimeout(() => {
+    const g = rooms.get(roomId);
+    if (!g || g.state !== 'playing') return;
+    startMiniGame(nsp, roomId, g, next);
+  }, INTRO_DURATION);
 }
 
 function startMiniGame(nsp, roomId, game, id) {
@@ -375,37 +379,55 @@ function startMiniGame(nsp, roomId, game, id) {
       const q = game.startWml();
       nsp.to(roomId).emit('wmlStart', { question: q, duration: DURATIONS.wml_voting / 1000 });
       nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-      game.phaseTimer = setTimeout(() => finishWml(nsp, roomId, game), DURATIONS.wml_voting);
+      game.phaseTimer = setTimeout(() => {
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'wml_voting') return;
+        finishWml(nsp, roomId, g);
+      }, DURATIONS.wml_voting);
       break;
     }
     case 'rfgf': {
       const scenario = game.startRfgf();
       nsp.to(roomId).emit('rfgfStart', { scenario, duration: DURATIONS.rfgf_voting / 1000 });
-      game.phaseTimer = setTimeout(() => finishRfgf(nsp, roomId, game), DURATIONS.rfgf_voting);
+      game.phaseTimer = setTimeout(() => {
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'rfgf_voting') return;
+        finishRfgf(nsp, roomId, g);
+      }, DURATIONS.rfgf_voting);
       break;
     }
     case 'fts': {
       const template = game.startFts();
       nsp.to(roomId).emit('ftsStart', { template, duration: DURATIONS.fts_submitting / 1000 });
-      game.phaseTimer = setTimeout(() => finishFts(nsp, roomId, game), DURATIONS.fts_submitting);
+      game.phaseTimer = setTimeout(() => {
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'fts_submitting') return;
+        finishFts(nsp, roomId, g);
+      }, DURATIONS.fts_submitting);
       break;
     }
     case 'tos': {
       const data = game.startTos();
       nsp.to(roomId).emit('tosStart', { ...data, duration: DURATIONS.tos_answering / 1000 });
       game.phaseTimer = setTimeout(() => {
-        game.skipTos(data.currentPlayerId);
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'tos_answering') return;
+        g.skipTos(data.currentPlayerId);
         nsp.to(roomId).emit('tosSkipped', { name: data.currentPlayerName });
-        nsp.to(roomId).emit('playerList', game.getPlayerList());
-        nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-        tosNextTurn(nsp, roomId, game);
+        nsp.to(roomId).emit('playerList', g.getPlayerList());
+        nsp.to(roomId).emit('chaosUpdate', { score: g.chaosScore });
+        tosNextTurn(nsp, roomId, g);
       }, DURATIONS.tos_answering);
       break;
     }
     case 'telepathy': {
       const q = game.startTelepathy();
       nsp.to(roomId).emit('telepathyStart', { question: q, duration: DURATIONS.telepathy_answering / 1000 });
-      game.phaseTimer = setTimeout(() => finishTelepathy(nsp, roomId, game), DURATIONS.telepathy_answering);
+      game.phaseTimer = setTimeout(() => {
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'telepathy_answering') return;
+        finishTelepathy(nsp, roomId, g);
+      }, DURATIONS.telepathy_answering);
       break;
     }
     case 'draw': {
@@ -414,7 +436,11 @@ function startMiniGame(nsp, roomId, game, id) {
       const drawerSocket = nsp.sockets.get(info.drawerId);
       if (drawerSocket) drawerSocket.emit('drawYourTurn', { targetName: info.targetName });
       nsp.to(roomId).emit('drawStart', { drawerId: info.drawerId, drawerName: game.players.get(info.drawerId)?.name, duration: DURATIONS.draw_drawing / 1000 });
-      game.phaseTimer = setTimeout(() => startDrawGuessing(nsp, roomId, game), DURATIONS.draw_drawing);
+      game.phaseTimer = setTimeout(() => {
+        const g = rooms.get(roomId);
+        if (!g || g.state !== 'draw_drawing') return;
+        startDrawGuessing(nsp, roomId, g);
+      }, DURATIONS.draw_drawing);
       break;
     }
   }
@@ -456,11 +482,13 @@ function tosNextTurn(nsp, roomId, game) {
   }
   nsp.to(roomId).emit('tosTurn', { ...next, duration: DURATIONS.tos_answering / 1000 });
   game.phaseTimer = setTimeout(() => {
-    game.skipTos(next.currentPlayerId);
+    const g = rooms.get(roomId);
+    if (!g || g.state !== 'tos_answering') return;
+    g.skipTos(next.currentPlayerId);
     nsp.to(roomId).emit('tosSkipped', { name: next.currentPlayerName });
-    nsp.to(roomId).emit('playerList', game.getPlayerList());
-    nsp.to(roomId).emit('chaosUpdate', { score: game.chaosScore });
-    tosNextTurn(nsp, roomId, game);
+    nsp.to(roomId).emit('playerList', g.getPlayerList());
+    nsp.to(roomId).emit('chaosUpdate', { score: g.chaosScore });
+    tosNextTurn(nsp, roomId, g);
   }, DURATIONS.tos_answering);
 }
 
@@ -474,8 +502,16 @@ function finishTelepathy(nsp, roomId, game) {
 
 function startDrawGuessing(nsp, roomId, game) {
   game.state = 'draw_guessing';
-  nsp.to(roomId).emit('drawGuessStart', { captions: require('./prompts').CAPTION_LABELS, duration: DURATIONS.draw_guessing / 1000 });
-  game.phaseTimer = setTimeout(() => finishDrawGuessing(nsp, roomId, game), DURATIONS.draw_guessing);
+  nsp.to(roomId).emit('drawGuessStart', {
+    captions: require('./prompts').CAPTION_LABELS,
+    drawerId: game.drawTarget ? game.drawTarget.drawerId : null,
+    duration: DURATIONS.draw_guessing / 1000,
+  });
+  game.phaseTimer = setTimeout(() => {
+    const g = rooms.get(roomId);
+    if (!g || g.state !== 'draw_guessing') return;
+    finishDrawGuessing(nsp, roomId, g);
+  }, DURATIONS.draw_guessing);
 }
 
 function finishDrawGuessing(nsp, roomId, game) {

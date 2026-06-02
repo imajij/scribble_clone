@@ -257,9 +257,9 @@ class DrawingCanvas {
       this.ctx.drawImage(img, 0, 0);
     };
     img.src = this.history.pop();
-
-    this.socket.emit('clearCanvas');
-    // Note: undo only works locally for the drawer — remote players get a clear
+    // Undo is LOCAL-ONLY: pop history + redraw on the drawer's canvas.
+    // We intentionally do NOT emit 'clearCanvas' here — that would wipe every
+    // spectator's view. The Clear button still emits clearCanvas to broadcast.
   }
 
   clear() {

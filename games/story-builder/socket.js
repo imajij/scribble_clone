@@ -6,7 +6,6 @@
 
 const StoryBuilderGame = require('./storyBuilder');
 const tracker = require('../../playerTracker');
-const { saveScore, loadScore } = require('../../redisCache');
 
 const rooms = new Map();
 const playerRooms = new Map();        // socketId → roomId
@@ -121,7 +120,7 @@ function register(io) {
       });
 
       // Advance to next turn after brief delay
-      setTimeout(() => advanceTurn(nsp, roomId, game), 1500);
+      scheduleAdvance(nsp, roomId, game);
     });
 
     // ── Chat ──
@@ -152,7 +151,9 @@ function register(io) {
       const wasOwner = game.isOwner(socket.id);
       const pName = player.name;
 
-      if (sid && player.score > 0) saveScore('story-builder', sid, player.score);
+      // NOTE: this game keeps no per-player score (players only have name,
+      // avatar, sessionId, connected, sentenceCount), so there is nothing to
+      // persist on disconnect. The old `player.score` branch was dead code.
       if (sid) game.holdPlayerSeat(socket.id);
       game.removePlayer(socket.id);
       playerRooms.delete(socket.id);
@@ -192,7 +193,7 @@ function register(io) {
           writerName: skip.writerName,
           storyLength: skip.storyLength
         });
-        setTimeout(() => advanceTurn(nsp, roomId, game), 1500);
+        scheduleAdvance(nsp, roomId, game);
       }
 
       broadcastState(nsp, roomId, game);
@@ -227,14 +228,8 @@ async function joinRoom(nsp, socket, roomId, playerName, sessionId) {
   tracker.playerJoined('story-builder');
   if (sessionId) sessionToSocket.set(sessionId, socket.id);
 
-  // Restore cached score from Redis
-  if (sessionId) {
-    const cached = await loadScore('story-builder', sessionId);
-    if (cached !== null) {
-      const p = game.players.get(socket.id);
-      if (p && p.score === 0) p.score = cached;
-    }
-  }
+  // (No score restore: Story Builder is a collaborative writing game with no
+  // per-player score, so there is nothing cached to load.)
   socket.join(roomId);
 
   socket.emit('joinedRoom', buildPayload(game, socket.id, roomId, false));
@@ -296,6 +291,10 @@ function broadcastTurnEvent(nsp, roomId, game, result) {
 
     // Auto-skip if writer does not submit in time
     game.turnTimer = setTimeout(() => {
+      game.turnTimer = null;
+      // Re-check the room still exists and we are still on this exact turn
+      // before mutating state (the writer may have submitted / left meanwhile).
+      if (rooms.get(roomId) !== game) return;
       if (game.state === 'writing' && game.currentWriter === result.writer) {
         const skip = game.skipTurn();
         nsp.to(roomId).emit('turnSkipped', {
@@ -303,10 +302,23 @@ function broadcastTurnEvent(nsp, roomId, game, result) {
           writerName: skip.writerName,
           storyLength: skip.storyLength
         });
-        setTimeout(() => advanceTurn(nsp, roomId, game), 1500);
+        scheduleAdvance(nsp, roomId, game);
       }
     }, result.turnDuration * 1000);
   }
+}
+
+// Schedule the (delayed) advance to the next turn. The timer is stored on the
+// game so clearTimers() can cancel it, and the callback re-validates that the
+// room still exists and is mid-game before advancing.
+function scheduleAdvance(nsp, roomId, game) {
+  if (game.advanceTimer) clearTimeout(game.advanceTimer);
+  game.advanceTimer = setTimeout(() => {
+    game.advanceTimer = null;
+    if (rooms.get(roomId) !== game) return;
+    if (game.state !== 'writing') return;
+    advanceTurn(nsp, roomId, game);
+  }, 1500);
 }
 
 function advanceTurn(nsp, roomId, game) {

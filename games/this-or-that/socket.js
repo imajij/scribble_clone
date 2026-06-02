@@ -159,25 +159,43 @@ function register(io) {
       if (!player) { playerRooms.delete(socket.id); return; }
 
       if (game.state !== 'waiting') {
-        // Hold for reconnect
+        // Hold for reconnect. holdPlayerForReconnect() transfers ownership
+        // to a live player when the departing player was the host, so the
+        // game stays controllable even if the owner never comes back.
         if (player.sessionId && player.score > 0) saveScore('this-or-that', player.sessionId, player.score);
+        const wasOwner = game.owner === socket.id;
         game.holdPlayerForReconnect(socket.id);
         playerRooms.delete(socket.id);
 
+        if (wasOwner) {
+          nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
+        }
+
         disconnectTimers.set(player.sessionId, setTimeout(() => {
           disconnectTimers.delete(player.sessionId);
-          game.disconnectedPlayers.delete(player.sessionId);
-          if (game.players.size === 0 && game.disconnectedPlayers.size === 0) {
-            game.cleanup();
+          // Guard: room may already be gone (everyone left / reset).
+          const liveGame = rooms.get(roomId);
+          if (!liveGame || liveGame !== game) return;
+          // Only act if the seat is still being held (not reconnected).
+          if (!liveGame.disconnectedPlayers.has(player.sessionId)) return;
+
+          liveGame.disconnectedPlayers.delete(player.sessionId);
+          if (liveGame.players.size === 0 && liveGame.disconnectedPlayers.size === 0) {
+            liveGame.cleanup();
             rooms.delete(roomId);
+          } else {
+            nsp.to(roomId).emit('playerLeft', { playerName: player.name, players: liveGame.getPlayerList() });
+            nsp.to(roomId).emit('ownerUpdate', { owner: liveGame.owner });
           }
-          nsp.to(roomId).emit('playerLeft', { playerName: player.name, players: game.getPlayerList() });
-          nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
+          // One decrement for this real departure (grace expired without reconnect).
           tracker.playerLeft('this-or-that');
           nsp.emit('roomList', getRoomList());
         }, RECONNECT_GRACE));
 
         nsp.to(roomId).emit('playerDisconnected', { playerName: player.name });
+        // NOTE: do NOT decrement the tracker here — the seat is held. The
+        // decrement happens either when the grace timer expires (above) or
+        // is skipped entirely if the player reconnects.
       } else {
         game.removePlayer(socket.id);
         playerRooms.delete(socket.id);
@@ -189,10 +207,11 @@ function register(io) {
           nsp.to(roomId).emit('playerLeft', { playerName: player.name, players: game.getPlayerList() });
           nsp.to(roomId).emit('ownerUpdate', { owner: game.owner });
         }
-      }
 
-      tracker.playerLeft('this-or-that');
-      nsp.emit('roomList', getRoomList());
+        // Waiting-state departure is immediate and final → one decrement.
+        tracker.playerLeft('this-or-that');
+        nsp.emit('roomList', getRoomList());
+      }
     });
   });
 }
@@ -262,9 +281,12 @@ function startNextRound(nsp, roomId, game) {
 
   nsp.to(roomId).emit('newRound', roundData);
 
-  // Vote timer
+  // Vote timer — stored on the game so cleanup() can clear it; the callback
+  // re-checks the room still exists and is still in the voting phase before firing.
   game.voteTimer = setTimeout(() => {
     game.voteTimer = null;
+    const liveGame = rooms.get(roomId);
+    if (!liveGame || liveGame !== game || game.state !== 'voting') return;
     endVoting(nsp, roomId, game);
   }, game.voteDuration * 1000);
 }
@@ -273,9 +295,12 @@ function endVoting(nsp, roomId, game) {
   const results = game.calculateResults();
   nsp.to(roomId).emit('roundResults', results);
 
-  // After pause, start next round
+  // After pause, start next round — stored on the game so cleanup() clears it;
+  // the callback re-checks the room still exists and is showing results.
   game.resultTimer = setTimeout(() => {
     game.resultTimer = null;
+    const liveGame = rooms.get(roomId);
+    if (!liveGame || liveGame !== game || game.state !== 'results') return;
     if (game.roundNum >= game.maxRounds) {
       game.state = 'gameOver';
       nsp.to(roomId).emit('gameOver', { results: game.getFinalResults() });

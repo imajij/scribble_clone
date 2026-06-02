@@ -34,7 +34,8 @@ class StoryBuilderGame {
 
     // Timer
     this.turnDuration = 45;       // seconds per turn
-    this.turnTimer = null;
+    this.turnTimer = null;        // auto-skip timer for the active writer
+    this.advanceTimer = null;     // delayed advanceTurn after a sentence/skip
 
     // Story
     this.story = [];              // [{ sentence, playerName, playerId, avatar, timestamp }]
@@ -74,7 +75,16 @@ class StoryBuilderGame {
 
   removePlayer(socketId) {
     this.players.delete(socketId);
-    this.turnOrder = this.turnOrder.filter(id => id !== socketId);
+
+    // Keep turnIndex pointing at the same logical writer after splicing the
+    // departing player out of turnOrder. If the removed slot is at or before
+    // the cursor, every later slot shifts down by one, so decrement turnIndex
+    // to avoid skipping a turn or triggering a spurious round increment.
+    const removedIdx = this.turnOrder.indexOf(socketId);
+    if (removedIdx !== -1) {
+      this.turnOrder.splice(removedIdx, 1);
+      if (removedIdx <= this.turnIndex) this.turnIndex--;
+    }
 
     if (this.owner === socketId) {
       const remaining = [...this.players.keys()];
@@ -90,11 +100,17 @@ class StoryBuilderGame {
   holdPlayerSeat(socketId) {
     const player = this.players.get(socketId);
     if (!player || !player.sessionId) return;
+    // Capture the player's slot in turnOrder *before* removePlayer strips it
+    // out, plus whether they were the active writer, so reconnectPlayer can
+    // restore the new socketId into the exact same seat.
     this.disconnectedPlayers.set(player.sessionId, {
       name: player.name,
       avatar: player.avatar,
       sessionId: player.sessionId,
-      sentenceCount: player.sentenceCount
+      sentenceCount: player.sentenceCount,
+      oldSocketId: socketId,
+      turnIndex: this.turnOrder.indexOf(socketId),
+      wasWriter: this.currentWriter === socketId
     });
   }
 
@@ -111,12 +127,32 @@ class StoryBuilderGame {
       sentenceCount: held.sentenceCount
     });
 
-    // Fix turn order
-    const idx = this.turnOrder.indexOf(sessionId);
-    if (idx !== -1) this.turnOrder[idx] = newSocketId;
-    else this.turnOrder.push(newSocketId);
+    // Restore the player's seat in the turn order. turnOrder holds socketIds,
+    // so match against the old socketId (and the recorded index) rather than
+    // the sessionId, which was never stored in turnOrder.
+    let idx = this.turnOrder.indexOf(held.oldSocketId);
+    if (idx === -1 && typeof held.turnIndex === 'number' && held.turnIndex >= 0) {
+      // removePlayer already spliced the old socketId out; re-insert in place.
+      idx = Math.min(held.turnIndex, this.turnOrder.length);
+      this.turnOrder.splice(idx, 0, newSocketId);
+      // We re-grew turnOrder at idx; if that seat was at/before the cursor the
+      // turnIndex was decremented on removal, so push it back to stay aligned.
+      if (idx <= this.turnIndex) this.turnIndex++;
+    } else if (idx !== -1) {
+      this.turnOrder[idx] = newSocketId;
+    } else {
+      this.turnOrder.push(newSocketId);
+    }
 
-    if (this.currentWriter === sessionId) this.currentWriter = newSocketId;
+    // Restore the active writer pointer (held by socketId, not sessionId).
+    // ONLY remap when the pointer still references this player's now-dead
+    // socket. If the turn already advanced past them while they were gone
+    // (the common case — the server skips a disconnected writer), currentWriter
+    // points at a *different* live socketId; remapping it on the stale
+    // wasWriter flag would clobber the real active writer and break the turn.
+    if (this.currentWriter === held.oldSocketId) {
+      this.currentWriter = newSocketId;
+    }
 
     // Restore owner
     if (this.ownerSessionId === sessionId) this.owner = newSocketId;
@@ -311,6 +347,7 @@ class StoryBuilderGame {
 
   clearTimers() {
     if (this.turnTimer) { clearTimeout(this.turnTimer); this.turnTimer = null; }
+    if (this.advanceTimer) { clearTimeout(this.advanceTimer); this.advanceTimer = null; }
   }
 }
 
