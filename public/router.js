@@ -78,6 +78,41 @@ const ROUTES = {
     icon: '\u{1F37B}',
     color: '#a855f7',
   },
+  '/never-have-i-ever': {
+    gameId: 'never-have-i-ever',
+    assetBase: '/never-have-i-ever',
+    scripts: ['app.js'],
+    icon: '\u{1F648}',
+    color: '#f472b6',
+  },
+  '/two-truths': {
+    gameId: 'two-truths',
+    assetBase: '/two-truths',
+    scripts: ['app.js'],
+    icon: '\u{1F925}',
+    color: '#38bdf8',
+  },
+  '/wavelength': {
+    gameId: 'wavelength',
+    assetBase: '/wavelength',
+    scripts: ['app.js'],
+    icon: '\u{1F4E1}',
+    color: '#22d3ee',
+  },
+  '/trivia': {
+    gameId: 'trivia',
+    assetBase: '/trivia',
+    scripts: ['app.js'],
+    icon: '\u{1F9E0}',
+    color: '#a78bfa',
+  },
+  '/mafia': {
+    gameId: 'mafia',
+    assetBase: '/mafia',
+    scripts: ['app.js'],
+    icon: '\u{1F575}\u{FE0F}',
+    color: '#ef4444',
+  },
 };
 
 // ── Map game-id → SPA route (for home page card links) ──
@@ -246,6 +281,11 @@ var ICONS = {
   'story-builder':  '\u{1F4DD}',
   'couple-mode':    '\u{1F491}',
   'bachelor-mode':  '\u{1F37B}',
+  'never-have-i-ever': '\u{1F648}',
+  'two-truths':     '\u{1F925}',
+  'wavelength':     '\u{1F4E1}',
+  'trivia':         '\u{1F9E0}',
+  'mafia':          '\u{1F575}\u{FE0F}',
 };
 
 var COLORS = {
@@ -258,7 +298,15 @@ var COLORS = {
   'story-builder':  '#7f5af0',
   'couple-mode':    '#ff6b9d',
   'bachelor-mode':  '#a855f7',
+  'never-have-i-ever': '#f472b6',
+  'two-truths':     '#38bdf8',
+  'wavelength':     '#22d3ee',
+  'trivia':         '#a78bfa',
+  'mafia':          '#ef4444',
 };
+
+// Games flagged NEW in the hubs
+var NEW_GAME_IDS = ['never-have-i-ever', 'two-truths', 'wavelength', 'trivia', 'mafia'];
 
 function loadHome() {
   document.title = 'After Dark Games \u{1F319}';
@@ -289,7 +337,47 @@ function loadHome() {
 // Couple lobby (game hub)
 // ============================================================
 
-var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder'];
+var COUPLE_GAME_IDS = ['scribble', 'truth-or-tease', 'this-or-that', 'scenario', 'confessions', 'dare-roulette', 'story-builder', 'wavelength', 'never-have-i-ever', 'two-truths', 'trivia'];
+
+// Standalone full games surfaced as cards in the Bachelor hub
+var BACHELOR_GAME_IDS = ['mafia', 'never-have-i-ever', 'two-truths', 'trivia'];
+
+// Shared: fetch the catalog and append a glass card for each allowed game id.
+function appendRegistryCards(grid, allowIds) {
+  fetch('/api/games')
+    .then(function(res) { return res.json(); })
+    .then(function(games) {
+      games
+        .filter(function(g) { return allowIds.indexOf(g.id) !== -1; })
+        .forEach(function(game) {
+          var icon  = ICONS[game.id] || '\u{1F3AE}';
+          var color = COLORS[game.id] || '#a855f7';
+          var spaRoute = ID_TO_ROUTE[game.id];
+          var card = document.createElement('a');
+          card.href = spaRoute || game.route;
+          if (spaRoute) card.setAttribute('data-spa', '');
+          card.className = 'game-card';
+          card.style.setProperty('--card-accent', color);
+          var isNew = game.isNew || NEW_GAME_IDS.indexOf(game.id) !== -1;
+          card.innerHTML =
+            (isNew ? '<span class="card-new">NEW</span>' : '') +
+            '<div class="card-icon">' + icon + '</div>' +
+            '<h2 class="card-title">' + escapeHtml(game.name) + '</h2>' +
+            '<p class="card-desc">' + escapeHtml(game.description) + '</p>' +
+            '<div class="card-meta">' +
+              '<span class="meta-badge">' + escapeHtml(game.type) + '</span>' +
+              '<span class="meta-players">' + game.minPlayers + '–' + game.maxPlayers + ' players</span>' +
+            '</div>' +
+            '<div class="online-badge" id="online-' + game.id + '">' +
+              '<span class="online-dot"></span>' +
+              '<span class="online-count">0 online</span>' +
+            '</div>';
+          grid.appendChild(card);
+        });
+    })
+    .catch(function() {});
+  setupPlatformSocket();
+}
 
 var COUPLE_MINIGAMES = [
   { id: 'wml',      icon: '\u{1F5F3}\u{FE0F}', name: "Who's More Likely",      desc: 'Vote which of you is more likely to do it.',         color: '#ff6b9d' },
@@ -340,37 +428,8 @@ function loadCoupleLobby() {
     grid.appendChild(card);
   });
 
-  // Other standalone couple games from registry
-  fetch('/api/games')
-    .then(function(res) { return res.json(); })
-    .then(function(games) {
-      var coupleGames = games.filter(function(g) { return COUPLE_GAME_IDS.indexOf(g.id) !== -1; });
-      coupleGames.forEach(function(game) {
-        var icon  = ICONS[game.id] || '\u{1F3AE}';
-        var color = COLORS[game.id] || '#a855f7';
-        var spaRoute = ID_TO_ROUTE[game.id];
-        var card = document.createElement('a');
-        card.href = spaRoute || game.route;
-        if (spaRoute) card.setAttribute('data-spa', '');
-        card.className = 'game-card';
-        card.style.setProperty('--card-accent', color);
-        card.innerHTML =
-          '<div class="card-icon">' + icon + '</div>' +
-          '<h2 class="card-title">' + escapeHtml(game.name) + '</h2>' +
-          '<p class="card-desc">' + escapeHtml(game.description) + '</p>' +
-          '<div class="card-meta">' +
-            '<span class="meta-badge">' + game.type + '</span>' +
-            '<span class="meta-players">' + game.minPlayers + '\u2013' + game.maxPlayers + ' players</span>' +
-          '</div>' +
-          '<div class="online-badge" id="online-' + game.id + '">' +
-            '<span class="online-dot"></span>' +
-            '<span class="online-count">0 online</span>' +
-          '</div>';
-        grid.appendChild(card);
-      });
-    })
-    .catch(function() {});
-  setupPlatformSocket();
+  // Other standalone couple games from registry (+ new games)
+  appendRegistryCards(grid, COUPLE_GAME_IDS);
 }
 
 // ============================================================
@@ -420,6 +479,9 @@ function loadBachelorLobby() {
       '</div>';
     grid.appendChild(card);
   });
+
+  // Standalone full games (Mafia + new) from registry
+  appendRegistryCards(grid, BACHELOR_GAME_IDS);
 }
 
 function showAgeGate() {

@@ -105,6 +105,66 @@ const games = [
     minPlayers: 2,
     maxPlayers: 10,
     enabled: true
+  },
+  {
+    id: 'never-have-i-ever',
+    name: 'Never Have I Ever',
+    description: 'Tap your sins — the whole room sees who has and who never. Live confession tally.',
+    thumbnail: '/never-have-i-ever/thumbnail.png',
+    route: '/never-have-i-ever',
+    type: 'realtime',
+    minPlayers: 2,
+    maxPlayers: 16,
+    enabled: true,
+    isNew: true
+  },
+  {
+    id: 'two-truths',
+    name: 'Two Truths & a Lie',
+    description: 'Spin two truths and one lie — fool the room while you sniff out the liars.',
+    thumbnail: '/two-truths/thumbnail.png',
+    route: '/two-truths',
+    type: 'turn-based',
+    minPlayers: 3,
+    maxPlayers: 12,
+    enabled: true,
+    isNew: true
+  },
+  {
+    id: 'wavelength',
+    name: 'Wavelength',
+    description: "Read each other's minds on a spectrum. How in-sync are you two really?",
+    thumbnail: '/wavelength/thumbnail.png',
+    route: '/wavelength',
+    type: 'turn-based',
+    minPlayers: 2,
+    maxPlayers: 12,
+    enabled: true,
+    isNew: true
+  },
+  {
+    id: 'trivia',
+    name: 'Trivia Showdown',
+    description: 'Buzz in and out-smart the room across cheeky, after-dark trivia packs.',
+    thumbnail: '/trivia/thumbnail.png',
+    route: '/trivia',
+    type: 'realtime',
+    minPlayers: 2,
+    maxPlayers: 20,
+    enabled: true,
+    isNew: true
+  },
+  {
+    id: 'mafia',
+    name: 'Mafia',
+    description: 'Trust no one. The mafia hunt by night, the town votes by day. Survive til dawn.',
+    thumbnail: '/mafia/thumbnail.png',
+    route: '/mafia',
+    type: 'realtime',
+    minPlayers: 4,
+    maxPlayers: 12,
+    enabled: true,
+    isNew: true
   }
 ];
 

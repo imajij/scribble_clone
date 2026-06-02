@@ -249,6 +249,12 @@ function register(io) {
       // Only allow when the game is in 'waiting' state (i.e., game just ended)
       if (game.state !== 'waiting') return;
 
+      // Only the room owner may restart the game for everyone
+      if (!game.isOwner(socket.id)) {
+        socket.emit('error', { message: 'Only the room owner can start a new game!' });
+        return;
+      }
+
       // Restore the turn duration in case it was altered by bachelor mode etc.
       if (game.defaultTurnDuration) {
         game.turnDuration = game.defaultTurnDuration;

@@ -3,52 +3,57 @@
 
   <!-- ── Lobby ── -->
   <div id="lobbyScreen" class="screen">
-    <div class="bach-header">
-      <div class="bach-logo">🍻</div>
-      <h1 class="bach-title">Bachelor Mode</h1>
-      <p class="bach-subtitle">Absolute brainrot guaranteed</p>
-    </div>
-    <div class="lobby-card">
-      <input id="playerName" type="text" class="input-field" placeholder="Your name" maxlength="20" autocomplete="off" />
-      <div class="lobby-actions">
-        <button id="playNowBtn" class="btn btn-bach">🍻 Play Now</button>
-        <div class="join-row">
-          <input id="roomCodeInput" type="text" class="input-field input-code" placeholder="Have a code? Join friends" maxlength="6" autocomplete="off" />
-          <button id="joinRoomBtn" class="btn btn-outline-bach">Join</button>
-        </div>
+    <div class="lobby-container">
+      <div class="lobby-header">
+        <div class="bach-logo">🍻</div>
+        <h1 class="logo">Bachelor Mode</h1>
+        <p class="subtitle">Absolute brainrot guaranteed</p>
       </div>
-      <div id="activeRooms" class="hidden">
-        <div class="active-rooms-label">Active Rooms</div>
-        <div id="roomListContainer"></div>
+      <div class="lobby-form">
+        <input id="playerName" type="text" placeholder="Your name" maxlength="20" autocomplete="off" />
+        <div class="lobby-actions">
+          <button id="playNowBtn" class="btn btn-primary btn-block">🍻 Play Now</button>
+          <div class="divider">or join a room</div>
+          <div class="join-row">
+            <input id="roomCodeInput" type="text" class="room-code-input" placeholder="Code" maxlength="6" autocomplete="off" />
+            <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+          </div>
+        </div>
+        <div id="activeRooms" class="active-rooms hidden">
+          <h3>Active Rooms</h3>
+          <div id="roomListContainer" class="room-list"></div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ── Waiting Room ── -->
   <div id="waitingScreen" class="screen hidden">
-    <div class="waiting-header">
-      <div class="room-code-badge">Room: <span id="roomCodeDisplay">----</span></div>
-      <div class="player-count-badge"><span id="playerCount">1</span> players</div>
-    </div>
-    <div id="waitingPlayers" class="player-grid"></div>
-    <div class="waiting-footer">
-      <div class="waiting-hint">Share the room code to invite friends!</div>
-      <div id="roundsConfig" class="rounds-config hidden">
-        <label for="roundsSelect">Rounds:</label>
-        <select id="roundsSelect" class="rounds-select">
-          <option value="3">3 rounds</option>
-          <option value="6" selected>6 rounds (default)</option>
-          <option value="9">9 rounds</option>
-          <option value="12">12 rounds</option>
-        </select>
+    <div class="waiting-container">
+      <div class="waiting-header">
+        <div class="room-code">Room: <span id="roomCodeDisplay">----</span></div>
+        <div class="player-count"><span id="playerCount">1</span> players</div>
       </div>
-      <button id="startGameBtn" class="btn btn-bach btn-lg" disabled>Need 2+ players</button>
-    </div>
-    <div class="chat-panel">
-      <div id="chatMessages" class="chat-messages"></div>
-      <div class="chat-input-row">
-        <input id="chatInput" class="input-field chat-input" type="text" placeholder="Chat..." maxlength="200" />
-        <button id="sendBtn" class="btn btn-sm btn-outline-bach">→</button>
+      <div id="waitingPlayers" class="player-grid"></div>
+      <div class="waiting-footer">
+        <div class="share-text">Share the room code to invite friends!</div>
+        <div id="roundsConfig" class="rounds-config hidden">
+          <label for="roundsSelect">Rounds:</label>
+          <select id="roundsSelect" class="rounds-select">
+            <option value="3">3 rounds</option>
+            <option value="6" selected>6 rounds (default)</option>
+            <option value="9">9 rounds</option>
+            <option value="12">12 rounds</option>
+          </select>
+        </div>
+        <button id="startGameBtn" class="btn btn-primary btn-large btn-block" disabled>Need 2+ players</button>
+      </div>
+      <div class="chat-panel">
+        <div id="chatMessages" class="chat-messages"></div>
+        <div class="chat-input-area">
+          <input id="chatInput" type="text" placeholder="Chat..." maxlength="200" />
+          <button id="sendBtn" class="btn btn-send">→</button>
+        </div>
       </div>
     </div>
   </div>
@@ -104,12 +109,12 @@
           <button class="size-btn" data-size="10">M</button>
           <button class="size-btn" data-size="20">L</button>
         </div>
-        <button id="bachClearBtn" class="btn btn-sm btn-outline-bach">🔄 Clear</button>
+        <button id="bachClearBtn" class="btn btn-ghost btn-clear">🔄 Clear</button>
       </div>
       <div id="susCaptionArea" class="hidden">
         <div class="mg-subtitle">What is this?? Caption it!</div>
-        <textarea id="susCaptionInput" class="textarea-field" rows="2" maxlength="100" placeholder="Your caption..."></textarea>
-        <button id="susCaptionSubmitBtn" class="btn btn-bach">Submit Caption 💬</button>
+        <textarea id="susCaptionInput" rows="2" maxlength="100" placeholder="Your caption..."></textarea>
+        <button id="susCaptionSubmitBtn" class="btn btn-primary btn-block">Submit Caption 💬</button>
       </div>
       <div id="susWatcherMsg" class="hidden mg-subtitle">👀 Watching...</div>
     </div>
@@ -146,8 +151,8 @@
         <div id="captionScene" class="scenario-text"></div>
         <div id="captionLabel" class="scenario-label"></div>
       </div>
-      <textarea id="captionInput" class="textarea-field" rows="2" maxlength="150" placeholder="Your caption..."></textarea>
-      <button id="captionSubmitBtn" class="btn btn-bach">Submit 🔥</button>
+      <textarea id="captionInput" rows="2" maxlength="150" placeholder="Your caption..."></textarea>
+      <button id="captionSubmitBtn" class="btn btn-primary btn-block">Submit 🔥</button>
       <div class="submit-progress"><span id="captionProgress">0/? submitted</span></div>
     </div>
 
@@ -170,8 +175,8 @@
     <div id="excuseScreen" class="minigame-screen hidden">
       <div class="mg-header"><div class="mg-prompt-label">🤥 Excuse Generator</div></div>
       <div class="prompt-card"><div id="excusePrompt" class="prompt-text"></div></div>
-      <textarea id="excuseInput" class="textarea-field" rows="3" maxlength="200" placeholder="Your excuse..."></textarea>
-      <button id="excuseSubmitBtn" class="btn btn-bach">Submit 🤞</button>
+      <textarea id="excuseInput" rows="3" maxlength="200" placeholder="Your excuse..."></textarea>
+      <button id="excuseSubmitBtn" class="btn btn-primary btn-block">Submit 🤞</button>
       <div class="submit-progress"><span id="excuseProgress">0/? submitted</span></div>
     </div>
 
@@ -194,8 +199,8 @@
     <div id="rizzScreen" class="minigame-screen hidden">
       <div class="mg-header"><div class="mg-prompt-label">🔥 Rate the Rizz</div></div>
       <div class="prompt-card"><div id="rizzPrompt" class="prompt-text"></div></div>
-      <textarea id="rizzInput" class="textarea-field" rows="3" maxlength="200" placeholder="Show your rizz..."></textarea>
-      <button id="rizzSubmitBtn" class="btn btn-bach">Submit 🔥</button>
+      <textarea id="rizzInput" rows="3" maxlength="200" placeholder="Show your rizz..."></textarea>
+      <button id="rizzSubmitBtn" class="btn btn-primary btn-block">Submit 🔥</button>
       <div class="submit-progress"><span id="rizzProgress">0/? submitted</span></div>
     </div>
 
@@ -220,10 +225,10 @@
       </div>
       <div class="prompt-card"><div id="liePrompt" class="prompt-text"></div></div>
       <div id="lieSpeakerArea" class="hidden">
-        <textarea id="lieInput" class="textarea-field" rows="3" maxlength="200" placeholder="Your statement..."></textarea>
+        <textarea id="lieInput" rows="3" maxlength="200" placeholder="Your statement..."></textarea>
         <div class="lie-toggle-row">
-          <button id="lieRealBtn" class="btn btn-outline-bach">✅ It's TRUE</button>
-          <button id="lieLieBtn"  class="btn btn-outline-bach">🤥 It's a LIE</button>
+          <button id="lieRealBtn" class="btn btn-secondary">✅ It's TRUE</button>
+          <button id="lieLieBtn"  class="btn btn-secondary">🤥 It's a LIE</button>
         </div>
         <div id="lieSubmitStatus" class="hidden mg-subtitle">Statement locked in 🔒</div>
       </div>
@@ -259,8 +264,8 @@
     <div id="drunkScreen" class="minigame-screen hidden">
       <div class="mg-header"><div class="mg-prompt-label">🍺 Drunk Logic</div></div>
       <div class="prompt-card"><div id="drunkPrompt" class="prompt-text"></div></div>
-      <textarea id="drunkInput" class="textarea-field" rows="3" maxlength="250" placeholder="Defend this with your life..."></textarea>
-      <button id="drunkSubmitBtn" class="btn btn-bach">Submit 🍺</button>
+      <textarea id="drunkInput" rows="3" maxlength="250" placeholder="Defend this with your life..."></textarea>
+      <button id="drunkSubmitBtn" class="btn btn-primary btn-block">Submit 🍺</button>
       <div class="submit-progress"><span id="drunkProgress">0/? submitted</span></div>
     </div>
 
@@ -281,18 +286,20 @@
 
     <!-- Next Round Control (shown after each mini-game reveal) -->
     <div id="nextRoundArea" class="next-round-area hidden">
-      <button id="nextRoundBtn" class="btn btn-bach btn-lg hidden">▶ Next Round</button>
+      <button id="nextRoundBtn" class="btn btn-primary btn-large btn-block hidden">▶ Next Round</button>
       <p id="nextRoundWait" class="wait-msg hidden">Waiting for host to continue...</p>
     </div>
 
   </div><!-- /#gameArea -->
 
   <!-- ── Game Over Overlay ── -->
-  <div id="gameOverOverlay" class="game-over-overlay hidden">
+  <div id="gameOverOverlay" class="overlay hidden">
     <div class="game-over-card">
       <div class="game-over-emoji">🍻</div>
       <h2 class="game-over-title">That's a wrap!</h2>
-      <button id="playAgainBtn" class="btn btn-bach btn-lg">Play Again 🔄</button>
+      <div id="chaosFinalScore" class="chaos-final"></div>
+      <button id="playAgainBtn" class="btn btn-primary btn-large btn-block">Play Again 🔄</button>
+      <p id="playAgainWait" class="wait-msg hidden">Waiting for the host to restart...</p>
     </div>
   </div>
 

@@ -124,23 +124,24 @@ class BachelorGame {
     return this.drawTarget;
   }
 
-  submitSusCaption(playerId, caption) {
+  submitSusCaption(playerId, text) {
     if (!this.submissions.find(s => s.playerId === playerId)) {
-      this.submissions.push({ playerId, caption });
+      this.submissions.push({ playerId, text });
       return true;
     }
     return false;
   }
 
+  voteSusCaption(voterId, targetId) {
+    this.votes[voterId] = targetId;
+    return Object.keys(this.votes).length;
+  }
+
   endSus() {
-    // Vote on captions
+    // Tally caption votes (votes map: voterId → captionPlayerId)
     const counts = {};
-    this.submissions.forEach(s => { counts[s.playerId] = (counts[s.playerId] || 0) + (this.votes[s.playerId] || 0); });
-    // Find most votes
+    Object.values(this.votes).forEach(id => { counts[id] = (counts[id] || 0) + 1; });
     let winner = null, max = 0;
-    Object.entries(this.votes).forEach(([voter, votedFor]) => {
-      counts[votedFor] = (counts[votedFor] || 0) + 1;
-    });
     Object.entries(counts).forEach(([id, cnt]) => {
       if (cnt > max) { max = cnt; winner = id; }
     });
@@ -150,7 +151,7 @@ class BachelorGame {
     const results = this.submissions.map(s => ({
       playerId: s.playerId,
       name: this.players.get(s.playerId)?.name || '?',
-      caption: s.caption,
+      caption: s.text,
       votes: counts[s.playerId] || 0,
     })).sort((a, b) => b.votes - a.votes);
     this.submissions = [];
@@ -257,9 +258,16 @@ class BachelorGame {
   rateRizz(voterId, targetId, rating) {  // rating 1-5
     if (voterId === targetId) return;
     if (!this.ratings[targetId]) this.ratings[targetId] = [];
-    if (!this.ratings[targetId].find(r => r.voterId === voterId)) {
-      this.ratings[targetId].push({ voterId, rating });
-    }
+    const existing = this.ratings[targetId].find(r => r.voterId === voterId);
+    if (existing) existing.rating = rating;
+    else this.ratings[targetId].push({ voterId, rating });
+  }
+
+  // Count how many distinct players have rated at least one rizz submission
+  rizzRaterCount() {
+    const raters = new Set();
+    Object.values(this.ratings).forEach(arr => arr.forEach(r => raters.add(r.voterId)));
+    return raters.size;
   }
 
   endRizz() {

@@ -51,6 +51,7 @@ class DareRouletteGame {
     // Timers
     this.spinTimer = null;
     this.revealTimeout = null;
+    this.advanceTimer = null;
 
     // Reconnect
     this.disconnectedPlayers = new Map(); // sessionId → held data
@@ -351,6 +352,7 @@ class DareRouletteGame {
   clearTimers() {
     if (this.spinTimer) { clearTimeout(this.spinTimer); this.spinTimer = null; }
     if (this.revealTimeout) { clearTimeout(this.revealTimeout); this.revealTimeout = null; }
+    if (this.advanceTimer) { clearTimeout(this.advanceTimer); this.advanceTimer = null; }
   }
 }
 

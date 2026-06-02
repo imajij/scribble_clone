@@ -156,6 +156,8 @@ class CoupleGame {
   nextMiniGame() {
     this.miniGameIndex++;
     if (this.miniGameIndex >= this.totalRounds) return null;
+    // Between mini-games (intro card) the room is in a neutral 'playing' state.
+    this.state = 'playing';
     // Cycle through mini-games if totalRounds > 6
     this.currentMiniGame = this.miniGames[this.miniGameIndex % this.miniGames.length];
     this._resetRoundState();
@@ -414,6 +416,9 @@ class CoupleGame {
   submitDrawCaption(socketId, caption) {
     if (this.state !== 'draw_guessing') return false;
     if (!this.players.has(socketId)) return false;
+    // The drawer cannot vote on their own drawing — otherwise with 2 players
+    // their single vote would hit eligible=1 and finish the phase prematurely.
+    if (this.drawTarget && socketId === this.drawTarget.drawerId) return false;
     if (this.votes.has(socketId)) return false;
     if (!CAPTION_LABELS.includes(caption)) return false;
     this.votes.set(socketId, caption);

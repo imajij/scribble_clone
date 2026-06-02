@@ -73,6 +73,9 @@ function register(io) {
         if (held) {
           sessionToSocket.set(sessionId, socket.id);
           playerRooms.set(socket.id, roomId);
+          // Mirror the playerLeft() emitted on disconnect so the global
+          // online count stays in sync after a successful reconnect.
+          tracker.playerJoined('truth-or-tease');
           socket.join(roomId);
 
           const payload = buildJoinPayload(game, socket.id, roomId, true);
@@ -232,6 +235,11 @@ function register(io) {
           nsp.to(roomId).emit('answerRevealed', skipResult);
           game.voteTimer = setTimeout(() => endVoting(nsp, roomId, game), game.voteDuration * 1000);
         }
+      } else if (wasHotSeat && game.state === 'voting') {
+        // Hot-seat player left mid-vote — tally what we have and advance so
+        // the game doesn't hang waiting on a vote timer that no event can end.
+        game.clearTimers();
+        endVoting(nsp, roomId, game);
       }
 
       nsp.to(roomId).emit('playerList', game.getPlayerList());
@@ -335,6 +343,8 @@ function handleTurnEvent(nsp, roomId, game, result) {
 
     // Answer timer — auto-skip if hot-seat doesn't answer in time
     game.answerTimer = setTimeout(() => {
+      game.answerTimer = null;
+      if (!rooms.has(roomId) || rooms.get(roomId) !== game) return;
       if (game.state === 'answering') {
         const skipResult = game.skipAnswer();
         if (skipResult) {
@@ -348,6 +358,10 @@ function handleTurnEvent(nsp, roomId, game, result) {
 }
 
 function endVoting(nsp, roomId, game) {
+  // Guard: only tally while the room is live and actually mid-vote. This makes
+  // it safe to call from a vote-timer that fired late or from a disconnect.
+  if (!rooms.has(roomId) || rooms.get(roomId) !== game) return;
+  if (game.state !== 'voting') return;
   game.clearTimers();
   const summary = game.tallyReactions();
 
@@ -361,8 +375,13 @@ function endVoting(nsp, roomId, game) {
     scores: summary.scores
   });
 
-  // Next turn after delay
-  setTimeout(() => {
+  // Next turn after delay. Stored on the game object so clearTimers() can
+  // cancel it; callback re-checks the room still exists and is paused at
+  // roundEnd before advancing (avoids acting on a torn-down/reset room).
+  game.nextTurnTimer = setTimeout(() => {
+    game.nextTurnTimer = null;
+    if (!rooms.has(roomId) || rooms.get(roomId) !== game) return;
+    if (game.state !== 'roundEnd') return;
     if (game.players.size >= 2) {
       const result = game.nextTurn();
       handleTurnEvent(nsp, roomId, game, result);

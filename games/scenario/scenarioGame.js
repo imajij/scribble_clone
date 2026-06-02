@@ -378,7 +378,7 @@ class ScenarioGame {
   }
 
   getCurrentState() {
-    return {
+    const snapshot = {
       state: this.state,
       roundNum: this.roundNum,
       maxRounds: this.maxRounds,
@@ -387,6 +387,20 @@ class ScenarioGame {
       votedCount: this.votes.size,
       totalPlayers: this.players.size
     };
+
+    // Include the live phase payload so a reconnecting client can rebuild the UI.
+    if (this.state === 'voting') {
+      // Anonymous answer list (same shape the client gets from 'votePhase').
+      const answers = [];
+      this.answers.forEach((a, id) => answers.push({ id, text: a.text }));
+      snapshot.answers = answers;
+    } else if (this.state === 'results') {
+      // Rebuild the results of the most recent round from history.
+      const last = this.history[this.history.length - 1];
+      if (last) snapshot.results = last.results;
+    }
+
+    return snapshot;
   }
 
   // ─── Utilities ───────────────────────────────────────

@@ -71,7 +71,11 @@
   </div>
   <div class="hud-right">
     <span id="hudRound" class="hud-round">1/6</span>
-    <span class="hud-chaos-label">🔥</span>
+    <div class="hud-chaos">
+      <span class="hud-chaos-label">🔥</span>
+      <div class="chaos-track"><div id="chaosFill" class="chaos-fill"></div></div>
+      <span id="chaosTierLabel" class="chaos-tier">Calm</span>
+    </div>
   </div>
 </div>
 
@@ -242,5 +246,6 @@
     <div class="game-over-emoji">💑</div>
     <h1>Game Over!</h1>
     <button id="playAgainBtn" class="btn btn-couple btn-lg">Play Again 🔄</button>
+    <p id="playAgainWait" class="wait-msg hidden">Waiting for host to restart...</p>
   </div>
 </div>

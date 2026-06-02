@@ -367,6 +367,9 @@
     writerStats.innerHTML = players.map(function(p) {
       return "<div class=\"stat-card\"><div class=\"stat-name\" style=\"color:" + p.avatar + "\">" + escapeHtml(p.name) + "</div><div class=\"stat-value\">" + p.sentenceCount + " sentence" + (p.sentenceCount !== 1 ? "s" : "") + " written</div></div>";
     }).join("");
+
+    // Only the room owner can restart the game.
+    playAgainBtn.style.display = isOwner ? "" : "none";
   }
 
   copyStoryBtn.addEventListener("click", function() {

@@ -1,319 +1,238 @@
-/* ========================================
-   AFTER DARK GAMES — PLATFORM STYLES
-   ======================================== */
+/* ========================================================================
+   AFTER DARK GAMES — Platform / Home styles  (Glassmorphism Premium)
+   Home mode-selector, couple/bachelor hubs, game cards.
+   (Design tokens + chrome live in shared/theme.css)
+   ======================================================================== */
 
-:root {
-  --bg-dark: #0f0a1a;
-  --bg-card: #1a1128;
-  --bg-panel: #241834;
-  --accent: #a855f7;
-  --accent-light: #c084fc;
-  --accent-glow: rgba(168, 85, 247, 0.3);
-  --pink: #ec4899;
-  --yellow: #fbbf24;
-  --text: #f1e8ff;
-  --text-muted: #9b8ab8;
-  --border: rgba(168, 85, 247, 0.15);
-  --radius: 16px;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  font-family: 'Nunito', sans-serif;
-  background: var(--bg-dark);
-  color: var(--text);
-  min-height: 100vh;
-  background-image:
-    radial-gradient(ellipse at 20% 50%, rgba(168, 85, 247, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(236, 72, 153, 0.04) 0%, transparent 50%);
-}
-
-/* ---- Header ---- */
-.hero {
-  text-align: center;
-  padding: 64px 24px 40px;
-}
-
-.logo {
-  font-family: 'Fredoka One', cursive;
-  font-size: 3.2rem;
-  background: linear-gradient(135deg, var(--accent-light), var(--pink), var(--yellow));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 10px;
-}
-
-.tagline {
-  color: var(--text-muted);
-  font-size: 1.2rem;
-  font-weight: 600;
-}
-
-/* ---- Game grid ---- */
-.game-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 48px;
-}
-
-.loading {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: var(--text-muted);
-  padding: 40px;
-}
-
-/* ---- Card ---- */
-.game-card {
-  --card-accent: var(--accent);
-  display: flex;
-  flex-direction: column;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 32px 28px 24px;
-  text-decoration: none;
-  color: var(--text);
-  transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.game-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 4px;
-  background: var(--card-accent);
-}
-
-.game-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px rgba(0,0,0,.5), 0 0 30px color-mix(in srgb, var(--card-accent) 25%, transparent);
-  border-color: var(--card-accent);
-}
-
-.card-icon {
-  font-size: 3rem;
-  margin-bottom: 12px;
-}
-
-.card-title {
-  font-family: 'Fredoka One', cursive;
-  font-size: 1.5rem;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.card-desc {
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  line-height: 1.6;
-  flex: 1;
-  margin-bottom: 16px;
-}
-
-.card-meta {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.meta-badge {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
-  color: var(--card-accent);
-}
-
-.meta-players {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-/* ---- Footer ---- */
-footer {
-  text-align: center;
-  padding: 32px 24px 48px;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-
-/* ---- Responsive ---- */
-@media (max-width: 640px) {
-  .hero { padding: 40px 16px 28px; }
-  .logo { font-size: 2.2rem; }
-  .tagline { font-size: 1rem; }
-  .game-grid { gap: 16px; padding: 0 16px 32px; }
-  .game-card { padding: 24px 20px 20px; }
-  .card-icon { font-size: 2.4rem; }
-  .card-title { font-size: 1.25rem; }
-}
-
-/* ---- Mode Selector (homepage) ---- */
+/* ============================================================
+   Home — mode selector
+   ============================================================ */
 .mode-selector {
-  min-height: calc(100vh - var(--navbar-h, 60px));
+  min-height: calc(100vh - var(--navbar-h));
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px 60px;
+  padding: 48px 24px 72px;
 }
 
-.mode-hero {
-  text-align: center;
-  margin-bottom: 52px;
-}
-
+.mode-hero { text-align: center; margin-bottom: clamp(36px, 6vw, 60px); animation: rise 0.5s var(--ease) both; }
 .mode-hero .logo {
-  font-family: 'Fredoka One', cursive;
-  font-size: 3rem;
-  background: linear-gradient(135deg, #c084fc, #ec4899, #fbbf24);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 10px;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.4rem, 8vw, 3.6rem);
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2) 55%, var(--accent-3));
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 6px 30px var(--accent-glow));
 }
-
-.mode-hero .tagline {
-  color: var(--text-muted);
-  font-size: 1.15rem;
-  font-weight: 600;
-}
+.mode-hero .tagline { color: var(--text-dim); font-size: clamp(1rem, 2.5vw, 1.25rem); font-weight: 600; }
 
 .mode-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 28px;
-  max-width: 720px;
+  max-width: 760px;
   width: 100%;
 }
 
 .mode-card {
-  --mode-color: #a855f7;
+  --mode-color: var(--accent);
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 52px 36px 40px;
-  border-radius: 28px;
-  text-decoration: none;
+  padding: 54px 36px 40px;
+  border-radius: var(--radius-xl);
   color: var(--text);
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  border-top: 4px solid var(--mode-color);
-  transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-  cursor: pointer;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur-lg)) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow-lg), var(--glass-highlight);
+  overflow: hidden;
+  transition: transform 0.3s var(--ease), box-shadow 0.3s, border-color 0.3s;
+  animation: rise 0.55s var(--ease) both;
 }
-
-.mode-couple  { --mode-color: #ff6b9d; }
-.mode-bachelor { --mode-color: #a855f7; }
+.mode-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 140px;
+  background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--mode-color) 40%, transparent), transparent 70%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+.mode-couple   { --mode-color: #ff6b9d; }
+.mode-bachelor { --mode-color: #b06bff; }
 
 .mode-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 24px 64px rgba(0,0,0,.55),
-              0 0 40px color-mix(in srgb, var(--mode-color) 22%, transparent);
-  border-color: var(--mode-color);
+  border-color: color-mix(in srgb, var(--mode-color) 55%, transparent);
+  box-shadow: var(--glass-shadow-lg), 0 0 50px color-mix(in srgb, var(--mode-color) 30%, transparent);
 }
 
-.mode-icon {
-  font-size: 4.5rem;
-  margin-bottom: 18px;
-  line-height: 1;
-}
-
-.mode-card h2 {
-  font-family: 'Fredoka One', cursive;
-  font-size: 2.1rem;
-  margin-bottom: 10px;
-  color: var(--text);
-}
-
-.mode-card p {
-  color: var(--text-muted);
-  font-size: 1rem;
-  line-height: 1.6;
-  margin-bottom: 18px;
-}
-
+.mode-icon { font-size: 4.6rem; margin-bottom: 18px; line-height: 1; filter: drop-shadow(0 8px 22px color-mix(in srgb, var(--mode-color) 45%, transparent)); position: relative; }
+.mode-card h2 { font-size: clamp(1.7rem, 5vw, 2.2rem); margin-bottom: 10px; }
+.mode-card p { color: var(--text-dim); font-size: 1rem; line-height: 1.6; margin-bottom: 18px; }
 .mode-game-list {
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   color: var(--mode-color);
   text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mode-color) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mode-color) 30%, transparent);
 }
 
-/* ---- Couple / Bachelor Hub ---- */
-.hub-wrap {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 24px 48px;
-}
-
-.hub-hero {
-  text-align: center;
-  padding: 48px 24px 36px;
-  position: relative;
-}
+/* ============================================================
+   Hubs (couple / bachelor)
+   ============================================================ */
+.hub-wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px 56px; }
+.hub-hero { text-align: center; padding: 40px 24px 32px; position: relative; animation: rise 0.5s var(--ease) both; }
 
 .hub-back {
   position: absolute;
-  left: 0;
-  top: 54px;
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 700;
-  transition: color 0.2s;
+  left: 0; top: 46px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  transition: color 0.2s, transform 0.2s var(--ease), border-color 0.2s;
 }
-.hub-back:hover { color: var(--text); }
+.hub-back:hover { color: var(--text); transform: translateX(-3px); border-color: var(--accent); }
 
-.hub-icon {
-  font-size: 3.5rem;
-  margin-bottom: 12px;
-}
-
+.hub-icon { font-size: 3.6rem; margin-bottom: 12px; filter: drop-shadow(0 6px 22px var(--accent-glow)); }
 .hub-title {
-  font-family: 'Fredoka One', cursive;
-  font-size: 2.6rem;
-  background: linear-gradient(135deg, #c084fc, #ec4899);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: clamp(2rem, 6vw, 2.8rem);
+  background: linear-gradient(135deg, #c79bff, #ff6b9d);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
   margin-bottom: 8px;
 }
+.hub-title-bachelor { background: linear-gradient(135deg, #b06bff, #4ade80); -webkit-background-clip: text; background-clip: text; }
+.hub-sub { color: var(--text-dim); font-size: 1.05rem; }
+.hub-bachelor .hub-icon { filter: drop-shadow(0 6px 22px rgba(74, 222, 128, 0.4)); }
 
-.hub-title-bachelor {
-  background: linear-gradient(135deg, #a855f7, #4ade80);
-  -webkit-background-clip: text;
-  background-clip: text;
+/* ============================================================
+   Game cards (home grid)
+   ============================================================ */
+.home-grid, .game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 4px 8px;
 }
 
-.hub-sub {
+.game-card {
+  --card-accent: var(--accent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 24px 20px;
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.22s var(--ease), box-shadow 0.22s, border-color 0.22s;
+  animation: rise 0.45s var(--ease) both;
+}
+.game-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--card-accent), transparent);
+}
+.game-card::after {
+  content: '';
+  position: absolute;
+  top: -40%; right: -30%;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--card-accent) 30%, transparent), transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.22s;
+}
+.game-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--card-accent);
+  box-shadow: var(--glass-shadow-lg), 0 0 40px color-mix(in srgb, var(--card-accent) 26%, transparent);
+}
+.game-card:hover::after { opacity: 1; }
+
+.card-icon { font-size: 2.7rem; margin-bottom: 10px; filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--card-accent) 40%, transparent)); }
+.card-title { font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; margin-bottom: 6px; }
+.card-desc { color: var(--text-dim); font-size: 0.9rem; line-height: 1.55; flex: 1; margin-bottom: 14px; }
+.card-meta { display: flex; align-items: center; gap: 10px; }
+.meta-badge {
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: color-mix(in srgb, var(--card-accent) 20%, transparent);
+  color: var(--card-accent);
+}
+.meta-players { font-size: 0.75rem; color: var(--text-muted); font-weight: 700; }
+
+/* New badge */
+.card-new {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  color: #1a1030;
+  background: linear-gradient(135deg, var(--accent-3), #ffd54f);
+  box-shadow: 0 4px 14px rgba(255, 183, 77, 0.4);
+}
+
+/* ── Live online badge ── */
+.online-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
   color: var(--text-muted);
-  font-size: 1.1rem;
+  transition: color 0.3s;
 }
+.online-badge.active { color: var(--success); }
+.online-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-muted); transition: background 0.3s, box-shadow 0.3s; }
+.online-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse-dot 2s infinite; }
+@keyframes pulse-dot { 0%,100% { box-shadow: 0 0 4px var(--success); } 50% { box-shadow: 0 0 12px var(--success); } }
 
+/* ============================================================
+   Responsive
+   ============================================================ */
 @media (max-width: 640px) {
-  .mode-cards { grid-template-columns: 1fr; }
-  .mode-card { padding: 36px 24px 28px; }
-  .mode-icon { font-size: 3.5rem; }
-  .mode-card h2 { font-size: 1.7rem; }
-  .hub-back { position: static; display: block; margin-bottom: 16px; text-align: left; }
-  .hub-hero { padding: 24px 0 24px; }
-  .hub-title { font-size: 2rem; }
-  .home-grid { gap: 16px; }
+  .mode-selector { padding: 28px 16px 56px; }
+  .mode-cards { grid-template-columns: 1fr; gap: 18px; }
+  .mode-card { padding: 40px 26px 30px; }
+  .mode-icon { font-size: 3.6rem; }
+  .hub-wrap { padding: 0 14px 40px; }
+  .hub-back { position: static; display: inline-flex; margin-bottom: 14px; }
+  .hub-hero { padding: 20px 0 20px; }
+  .home-grid, .game-grid { gap: 14px; }
 }

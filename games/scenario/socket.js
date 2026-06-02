@@ -241,7 +241,14 @@ function register(io) {
 // Phase advancement helpers
 // ============================================================
 
+// Guard: the room must still exist and be the same game instance before a
+// stored phase timer's callback is allowed to drive game flow.
+function roomAlive(roomId, game) {
+  return rooms.get(roomId) === game;
+}
+
 function advanceToAnswering(nsp, roomId, game) {
+  if (!roomAlive(roomId, game)) return;
   if (game.state !== 'reading') return;
   game.startAnswering();
   nsp.to(roomId).emit('answerPhase', {
@@ -256,6 +263,7 @@ function advanceToAnswering(nsp, roomId, game) {
 }
 
 function advanceToVoting(nsp, roomId, game) {
+  if (!roomAlive(roomId, game)) return;
   if (game.state !== 'answering') return;
   const result = game.startVoting();
   if (!result) {
@@ -275,6 +283,7 @@ function advanceToVoting(nsp, roomId, game) {
 }
 
 function advanceToResults(nsp, roomId, game) {
+  if (!roomAlive(roomId, game)) return;
   if (game.state !== 'voting') return;
   const result = game.tallyVotes();
   nsp.to(roomId).emit('roundResults', {
@@ -292,6 +301,7 @@ function advanceToResults(nsp, roomId, game) {
 }
 
 function advanceToNextRound(nsp, roomId, game) {
+  if (!roomAlive(roomId, game)) return;
   if (game.players.size < 2) {
     game.state = 'waiting';
     game.clearTimers();

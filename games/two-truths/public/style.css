@@ -1,0 +1,234 @@
+/* ========================================================================
+   TWO TRUTHS & A LIE — game-specific styles only.
+   Shared glass system (theme.css + components.css) handles body/background,
+   navbar, .screen, buttons, inputs, lobby, waiting room, .game-layout +
+   panels, .timer, .top-bar, .phase-label, overlays, .game-over-card.
+   Only this game's own widgets live here.
+   ======================================================================== */
+
+:root {
+  --accent: #38bdf8;
+  --accent-2: #22d3ee;
+  --accent-glow: rgba(56, 189, 248, 0.4);
+}
+
+/* ── Scoreboard panel ── */
+.phase-info {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-strong);
+  color: var(--text);
+}
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  border: 1px solid transparent;
+  font-weight: 700;
+}
+.player-score { font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
+.player-chip.owner { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+
+/* ── Prompt / question card ── */
+.prompt-card, .question-card {
+  padding: 1.4rem 1.3rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
+}
+.prompt-lead { font-size: clamp(0.95rem, 2.4vw, 1.12rem); line-height: 1.45; color: var(--text); }
+.prompt-lead strong { color: var(--accent-2); }
+.trio-author { font-size: 0.9rem; color: var(--text-dim); margin-bottom: 0.35rem; }
+.trio-author .author-name { color: var(--accent-2); font-weight: 800; }
+.trio-lead {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 3vw, 1.45rem);
+}
+
+/* ── Submit phase ── */
+.submit-area {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  padding: 1.1rem;
+  margin-top: 0.9rem;
+}
+.statement-rows { display: flex; flex-direction: column; gap: 0.7rem; }
+.statement-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.statement-input {
+  flex: 1;
+  min-width: 0;
+}
+.lie-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-border);
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 0.82rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+}
+.lie-toggle:hover { border-color: var(--accent); }
+.lie-toggle input { accent-color: var(--accent); cursor: pointer; }
+.statement-row:has(.lie-radio:checked) .lie-toggle {
+  border-color: transparent;
+  background: var(--grad-accent, linear-gradient(135deg, var(--accent), var(--accent-2)));
+  color: #04141d;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+.statement-row:has(.lie-radio:checked) .statement-input {
+  border-color: var(--accent);
+}
+.submit-actions { margin-top: 0.9rem; display: flex; gap: 0.6rem; }
+.submit-actions .btn { flex: 1; }
+.submit-status, .guess-status { text-align: center; color: var(--text-dim); margin-top: 0.7rem; font-size: 0.9rem; }
+
+/* ── Guess phase ── */
+.guess-area {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  padding: 1.1rem;
+  margin-top: 0.9rem;
+}
+.guess-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+.guess-btn.lie-card {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.9rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-soft);
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: transform 0.15s var(--ease), border-color 0.2s, background 0.2s;
+}
+.guess-btn.lie-card:hover:not([disabled]) { border-color: var(--accent); background: var(--glass-strong); transform: translateY(-2px); }
+.guess-btn.lie-card.selected { border-color: transparent; background: var(--grad-accent, linear-gradient(135deg, var(--accent), var(--accent-2))); color: #04141d; box-shadow: 0 6px 18px var(--accent-glow); }
+.guess-btn.lie-card[disabled] { opacity: 0.55; cursor: default; }
+.card-num {
+  flex: 0 0 auto;
+  width: 1.7rem; height: 1.7rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent-2);
+  font-weight: 900;
+  font-size: 0.85rem;
+}
+.guess-btn.lie-card.selected .card-num { background: rgba(0,0,0,0.18); color: #04141d; }
+.card-text { flex: 1; }
+.progress-indicator { text-align: center; color: var(--accent); font-size: 1rem; font-weight: 800; margin-top: 0.6rem; }
+
+/* ── Reveal phase ── */
+.reveal-card {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--glass-shadow);
+  padding: 1.5rem 1.3rem;
+}
+.reveal-author { font-family: var(--font-display); font-weight: 800; font-size: 1.2rem; color: var(--text); text-align: center; margin-bottom: 1rem; }
+.reveal-author .author-name { color: var(--accent-2); }
+.reveal-cards { display: flex; flex-direction: column; gap: 0.55rem; }
+.reveal-card-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-border);
+  font-weight: 700;
+}
+.reveal-card-item.truth { border-color: color-mix(in srgb, var(--success, #34d399) 45%, transparent); background: color-mix(in srgb, var(--success, #34d399) 14%, transparent); }
+.reveal-card-item.lie { border-color: color-mix(in srgb, var(--danger, #fb7185) 55%, transparent); background: color-mix(in srgb, var(--danger, #fb7185) 16%, transparent); }
+.reveal-card-item .card-tag { margin-left: auto; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; }
+.reveal-card-item.lie .card-tag { color: var(--danger, #fb7185); }
+.reveal-card-item.truth .card-tag { color: var(--success, #34d399); }
+.reveal-stats { display: flex; justify-content: center; gap: 1.6rem; margin: 1.1rem 0; }
+.reveal-stat { text-align: center; }
+.reveal-stat .stat-value { font-family: var(--font-display); font-weight: 800; font-size: 1.4rem; color: var(--accent); }
+.reveal-stat .stat-label { color: var(--text-muted); font-size: 0.78rem; }
+.reveal-guesses { margin-top: 0.4rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.reveal-guess-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+}
+.reveal-guess-row.correct { background: color-mix(in srgb, var(--success, #34d399) 18%, transparent); }
+.reveal-guess-row.wrong { background: color-mix(in srgb, var(--danger, #fb7185) 14%, transparent); }
+.guess-result-icon { font-size: 1.05rem; }
+
+/* ── Game-over score rows ── */
+.final-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  font-weight: 700;
+}
+.final-rank { font-size: 1.2rem; margin-right: 0.4rem; }
+.final-pts { font-family: var(--font-display); font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* ── Active rooms list ── */
+.room-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--glass-soft);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.room-join-btn { padding: 6px 16px; font-size: 0.85rem; }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .statement-row { flex-wrap: wrap; }
+  .lie-toggle { flex: 0 0 auto; }
+  .reveal-stats { gap: 1rem; }
+  .reveal-card-item { flex-wrap: wrap; }
+  .reveal-card-item .card-tag { margin-left: 2.4rem; }
+}

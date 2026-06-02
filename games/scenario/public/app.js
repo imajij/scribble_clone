@@ -35,7 +35,7 @@
   // ── Settings ──
   let selectedRounds = 3;
   let selectedIntensity = 2;
-  let selectedCategories = ['awkward','spicy','absurd','moral','wildcard'];
+  let selectedCategories = ['romantic','spicy','fantasy','awkward','wildcard'];
 
   // ── Socket ──
   const socket = io('/scenario');
@@ -264,7 +264,14 @@
     hasVoted = false;
     hide($('#voteSubmitted'));
 
-    currentAnswers = data.answers || [];
+    renderVoteCards(data.answers || []);
+
+    $('#voteCount').textContent = `0/0 voted`;
+    startTimerBar($('#votingTimer'), data.duration || VOTING_DURATION);
+  });
+
+  function renderVoteCards(answers) {
+    currentAnswers = answers || [];
     const cardsWrap = $('#voteCards');
     cardsWrap.innerHTML = '';
 
@@ -288,10 +295,7 @@
       }
       cardsWrap.appendChild(card);
     });
-
-    $('#voteCount').textContent = `0/0 voted`;
-    startTimerBar($('#votingTimer'), data.duration || VOTING_DURATION);
-  });
+  }
 
   socket.on('voteUpdate', data => {
     $('#voteCount').textContent = `${data.totalVoted}/${data.totalEligible} voted`;
@@ -308,10 +312,22 @@
     show($('#resultsArea'));
     clearTimerBar();
 
+    renderResultCards(data.results || []);
+
+    if (data.scores) renderPlayers(data.scores);
+    // Record to history
+    history.push({
+      roundNum: data.roundNum,
+      scenario: data.scenario,
+      results: data.results
+    });
+  });
+
+  function renderResultCards(results) {
     const wrap = $('#resultCards');
     wrap.innerHTML = '';
 
-    (data.results || []).forEach((r, i) => {
+    (results || []).forEach((r, i) => {
       const card = document.createElement('div');
       card.className = `result-card${r.isBest ? ' best' : ''}`;
       card.style.animationDelay = `${i * 0.1}s`;
@@ -325,15 +341,7 @@
       `;
       wrap.appendChild(card);
     });
-
-    if (data.scores) renderPlayers(data.scores);
-    // Record to history
-    history.push({
-      roundNum: data.roundNum,
-      scenario: data.scenario,
-      results: data.results
-    });
-  });
+  }
 
   socket.on('gameOver', data => {
     hideAllPhases();
@@ -427,7 +435,7 @@
   function updateStartBtn(count) {
     const btn = $('#startGameBtn');
     if (count === undefined) count = parseInt($('#pCount').textContent, 10) || 0;
-    if (isOwner && count >= 3) { btn.disabled = false; btn.textContent = 'Start Game 🚀'; }
+    if (isOwner && count >= 2) { btn.disabled = false; btn.textContent = 'Start Game 🚀'; }
     else if (isOwner) { btn.disabled = true; btn.textContent = 'Need 2+ players'; }
     else { btn.disabled = true; btn.textContent = 'Waiting for owner…'; }
   }
@@ -469,11 +477,17 @@
       setPhaseLabel('Voting');
       hideAllPhases();
       show($('#votingArea'));
+      hasVoted = false;
+      hide($('#voteSubmitted'));
+      // Rebuild the anonymous vote cards from the snapshot so the player can vote.
+      renderVoteCards(gs.answers || []);
       $('#voteCount').textContent = `${gs.votedCount}/${gs.totalPlayers} voted`;
     } else if (gs.state === 'results') {
       setPhaseLabel('Results');
       hideAllPhases();
       show($('#resultsArea'));
+      // Rebuild the result cards from the snapshot.
+      renderResultCards(gs.results || []);
     }
   }
 
@@ -489,7 +503,7 @@
   }
 
   function catLabel(cat) {
-    const m = { awkward:'😬 Awkward', spicy:'🌶️ Spicy', absurd:'🤪 Absurd', moral:'⚖️ Moral', wildcard:'🃏 Wildcard' };
+    const m = { romantic:'💕 Romantic', spicy:'🌶️ Spicy', fantasy:'✨ Fantasy', awkward:'😬 Awkward', wildcard:'🃏 Wildcard' };
     return m[cat] || cat;
   }
 

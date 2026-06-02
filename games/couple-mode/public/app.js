@@ -329,8 +329,37 @@
     } else if (badge) {
       hide(badge);
     }
-    showScreen('#waitingScreen');
     setupChat();
+
+    // ── Reconnect mid-game: restore the active screen instead of the lobby ──
+    if (data.isReconnect && data.state && data.state !== 'waiting' && data.state !== 'playing') {
+      currentMiniGame = data.currentMiniGame || null;
+      const SCREEN_FOR_STATE = {
+        wml_voting:          'wmlScreen',
+        wml_reveal:          'wmlResultScreen',
+        rfgf_voting:         'rfgfScreen',
+        rfgf_reveal:         'rfgfResultScreen',
+        fts_submitting:      'ftsScreen',
+        fts_reveal:          'ftsRevealScreen',
+        tos_answering:       'tosScreen',
+        tos_reveal:          'tosRevealScreen',
+        telepathy_answering: 'telepathyScreen',
+        telepathy_reveal:    'telepathyRevealScreen',
+        draw_drawing:        'drawScreen',
+        draw_guessing:       'drawGuessScreen',
+        draw_reveal:         'drawRevealScreen',
+      };
+      showScreen('#gameArea');
+      show($('#gameArea'));
+      show($('#gameHud'));
+      const mg = SCREEN_FOR_STATE[data.state];
+      if (mg) showMiniGame(mg);
+      // Fresh server-driven events (start/result/readyForNext) will repaint
+      // the live content; this just gets us off the waiting screen.
+      return;
+    }
+
+    showScreen('#waitingScreen');
   });
 
   socket.on('playerJoined', data => renderWaitingPlayers(data.players));
@@ -646,14 +675,16 @@
       dstCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
     }
     showMiniGame('drawGuessScreen');
+    const isDrawer = data.drawerId && data.drawerId === myId;
     const grid = $('#captionGrid');
     if (grid) {
       grid.innerHTML = data.captions.map(cap =>
-        '<button class="caption-btn" data-caption="' + esc(cap) + '">' + esc(cap) + '</button>'
+        '<button class="caption-btn" data-caption="' + esc(cap) + '"' + (isDrawer ? ' disabled' : '') + '>' + esc(cap) + '</button>'
       ).join('');
-      // Disable for drawer
     }
-    const hint = $('#drawGuessHint'); if (hint) hint.textContent = 'What do you see?';
+    if (isDrawer) hasVoted = true; // block the drawer from voting on their own drawing
+    const hint = $('#drawGuessHint');
+    if (hint) hint.textContent = isDrawer ? 'You drew this — waiting for the verdict... 👀' : 'What do you see?';
     const prog = $('#drawGuessProgress'); if (prog) prog.textContent = '0/? voted';
     startTimer(data.duration);
   });
@@ -692,6 +723,11 @@
   // ── Game Over ──
   socket.on('gameOver', data => {
     stopTimer();
+    // Only the owner may restart — gate the Play Again button.
+    const againBtn = $('#playAgainBtn');
+    const againWait = $('#playAgainWait');
+    if (isOwner) { show(againBtn); hide(againWait); }
+    else { hide(againBtn); show(againWait); }
     show($('#gameOverOverlay'));
   });
 

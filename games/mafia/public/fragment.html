@@ -1,0 +1,121 @@
+<!-- ============================================================
+     MAFIA 🕵️  — fragment (injected into #game-container)
+     No <html>/<head>/<body>, no <script>, no age-gate.
+     ============================================================ -->
+
+<!-- Lobby -->
+<div id="lobbyScreen" class="screen">
+  <div class="lobby-container">
+    <div class="lobby-header">
+      <h1 class="logo">Mafia 🕵️</h1>
+      <p class="subtitle">Trust no one. Survive the night.</p>
+    </div>
+    <div class="lobby-form">
+      <div class="input-group">
+        <label for="playerName">Your Name</label>
+        <input type="text" id="playerName" placeholder="Enter your name..." maxlength="20" autocomplete="off">
+      </div>
+      <div class="lobby-actions">
+        <button id="createRoomBtn" class="btn btn-primary"><span class="btn-icon">🎭</span> Create Room</button>
+        <div class="divider"><span>OR</span></div>
+        <div class="join-row">
+          <input type="text" id="roomCodeInput" placeholder="Room Code" maxlength="6" class="room-code-input">
+          <button id="joinRoomBtn" class="btn btn-secondary">Join</button>
+        </div>
+      </div>
+      <div class="room-settings">
+        <div class="setting-row">
+          <span class="rules-line">4–12 players · 1 Mafia per ~4 · Detective &amp; Doctor</span>
+        </div>
+      </div>
+    </div>
+    <div id="activeRooms" class="active-rooms hidden">
+      <h3>🗳️ Open Rooms</h3>
+      <div id="roomListContainer" class="room-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Waiting Room -->
+<div id="waitingScreen" class="screen hidden">
+  <div class="waiting-container">
+    <h2>Room: <span id="roomCodeDisplay" class="room-code"></span></h2>
+    <p class="share-text">Share this code — you need 4+ to begin.</p>
+    <div id="waitingPlayers" class="player-grid"></div>
+    <div class="waiting-actions">
+      <button id="startGameBtn" class="btn btn-primary btn-large" disabled>Need 4+ players to start</button>
+      <p class="player-count">Players: <span id="playerCount">0</span>/12</p>
+    </div>
+  </div>
+</div>
+
+<!-- Game Screen -->
+<div id="gameScreen" class="screen hidden">
+  <div class="game-layout">
+
+    <!-- Players panel -->
+    <div class="players-panel">
+      <div class="round-info">
+        <span id="phaseChip" class="phase-chip night">🌙 Night</span>
+        <span id="dayCounter">1</span>
+      </div>
+      <div id="roleCard" class="role-card">
+        <span class="role-card-label">Your Role</span>
+        <span id="roleCardName" class="role-card-name">—</span>
+        <span id="roleCardDesc" class="role-card-desc"></span>
+      </div>
+      <div id="playerList" class="player-list"></div>
+    </div>
+
+    <!-- Center stage -->
+    <div class="center-stage">
+      <div class="top-bar">
+        <div id="phaseLabel" class="phase-label">Night Falls</div>
+        <div id="timerDisplay" class="timer">30</div>
+      </div>
+
+      <!-- Action area (swapped per phase by app.js) -->
+      <div id="stageBody" class="stage-body">
+
+        <!-- Generic announcement / waiting card -->
+        <div id="announceCard" class="prompt-card hidden">
+          <div id="announceIcon" class="announce-icon">🌙</div>
+          <p id="announceText" class="announce-text">Night falls over the town…</p>
+          <p id="announceSub" class="announce-sub"></p>
+        </div>
+
+        <!-- Action card: pick a target (mafia / detective / doctor / vote) -->
+        <div id="actionCard" class="prompt-card hidden">
+          <span id="actionBadge" class="q-badge">Action</span>
+          <p id="actionPrompt" class="q-text">Choose your target</p>
+          <div id="targetList" class="target-list"></div>
+          <p id="actionStatus" class="action-status"></p>
+        </div>
+
+        <!-- Investigation / save / mafia-info banner -->
+        <div id="infoBanner" class="info-banner hidden"></div>
+
+      </div>
+    </div>
+
+    <!-- Chat -->
+    <div class="chat-panel">
+      <div id="chatLabel" class="chat-label">💬 Town Square</div>
+      <div id="chatMessages" class="chat-messages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Discuss…" maxlength="200" autocomplete="off">
+        <button id="sendBtn" class="btn btn-send">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Game Over Overlay -->
+<div id="gameOverOverlay" class="overlay hidden">
+  <div class="game-over-card">
+    <h1 id="gameOverTitle">🏆 Game Over!</h1>
+    <p id="gameOverSub" class="game-over-sub"></p>
+    <div id="finalScores" class="final-scores"></div>
+    <button id="playAgainBtn" class="btn btn-primary btn-large">Play Again</button>
+  </div>
+</div>

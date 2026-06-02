@@ -441,6 +441,14 @@
     startTimer(data.duration);
   });
 
+  socket.on('susCaptionVoteStart', data => {
+    stopTimer();
+    showMini('susCaptionVoteScreen');
+    buildVoteList('#susCaptionVoteList', '#susCaptionProgress', data.submissions, 'susCaptionVote');
+    const prog = $('#susCaptionProgress'); if (prog) prog.textContent = '0/' + lastPlayerList.length + ' voted';
+    startTimer(data.duration);
+  });
+
   socket.on('drawData', data => myDrawingCanvas?.remoteDrawData(data));
   socket.on('clearCanvas', () => myDrawingCanvas?.clear());
 
@@ -589,7 +597,7 @@
       // Inject submit button if not present
       if (!$('#lieSubmitConfirm')) {
         const btn = document.createElement('button');
-        btn.id = 'lieSubmitConfirm'; btn.className = 'btn btn-bach';
+        btn.id = 'lieSubmitConfirm'; btn.className = 'btn btn-primary btn-block';
         btn.textContent = '🔒 Lock In Statement';
         speakerArea?.appendChild(btn);
       }
@@ -668,9 +676,12 @@
   // ── Game Over ──
   socket.on('gameOver', data => {
     stopTimer();
-    const players = data.players || [];
     const chaosFinal = $('#chaosFinalScore');
     if (chaosFinal) chaosFinal.textContent = '🔥 Final chaos: ' + (data.chaosScore || 0) + '/100';
+    // Only the owner can restart — gate the button + show a wait note for others.
+    const againBtn = $('#playAgainBtn'), againWait = $('#playAgainWait');
+    if (isOwner) { show(againBtn); hide(againWait); }
+    else { hide(againBtn); show(againWait); }
     show($('#gameOverOverlay'));
   });
 

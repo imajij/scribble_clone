@@ -1,0 +1,212 @@
+/* ========================================================================
+   TRIVIA SHOWDOWN — game-specific styles only.
+   The lobby, waiting room, centered .center-stage, top-bar, timer, question
+   card and overlays all inherit the shared glass system (theme.css +
+   components.css). This file sets the accent identity and styles only the
+   bits unique to Trivia: the A/B/C/D option buttons, the reveal states, and
+   the round-end mini scoreboard.
+   ======================================================================== */
+
+:root {
+  --accent: #a78bfa;
+  --accent-2: #c084fc;
+  --accent-glow: rgba(167, 139, 250, 0.4);
+}
+
+/* ── Category badge on the question card ── */
+.cat-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  margin-bottom: 0.7rem;
+}
+.cat-badge.afterdark {
+  color: var(--accent-2);
+  background: color-mix(in srgb, var(--accent-2) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent-2) 45%, transparent);
+}
+
+.q-text {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+/* ── Center-stage spacing ── */
+.center-stage { gap: 1rem; }
+
+/* ============================================================
+   A / B / C / D answer options — the heart of the game
+   ============================================================ */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.opt-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-align: left;
+  padding: 1.05rem 1.1rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: var(--radius);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  border: 2px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  color: var(--text);
+  transition: transform 0.16s var(--ease), box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+.opt-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--glass));
+}
+.opt-btn:disabled { cursor: default; transform: none; }
+
+.opt-letter {
+  flex: 0 0 auto;
+  width: 2rem; height: 2rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 0.95rem;
+  color: #fff;
+  background: var(--grad-accent);
+  box-shadow: 0 4px 12px var(--accent-glow);
+}
+.opt-text { line-height: 1.3; }
+
+/* Locked-in (my pick, before reveal) */
+.opt-btn.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, var(--glass));
+  box-shadow: 0 0 26px var(--accent-glow);
+}
+
+/* Reveal states */
+.opt-btn.correct {
+  border-color: var(--success);
+  background: color-mix(in srgb, var(--success) 26%, var(--glass));
+  box-shadow: 0 0 26px color-mix(in srgb, var(--success) 45%, transparent);
+}
+.opt-btn.correct .opt-letter { background: var(--success); box-shadow: none; }
+.opt-btn.wrong {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 24%, var(--glass));
+}
+.opt-btn.wrong .opt-letter { background: var(--danger); box-shadow: none; }
+
+/* Per-option pick count chip shown at reveal */
+.opt-count {
+  position: absolute;
+  top: 0.4rem; right: 0.5rem;
+  min-width: 1.4rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text-dim);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.answer-status {
+  text-align: center;
+  color: var(--text-dim);
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+/* ============================================================
+   Round-end mini scoreboard
+   ============================================================ */
+.mini-board {
+  padding: 1.1rem 1.2rem;
+  border-radius: var(--radius-lg);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
+}
+.mini-title {
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 900;
+  margin-bottom: 0.6rem;
+  color: var(--accent);
+}
+.mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.mini-row:nth-child(odd) { background: var(--glass-soft); }
+.mini-row.me {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.mini-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini-score {
+  font-weight: 900;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.mini-gain { margin-left: 0.5rem; color: var(--success); font-weight: 800; }
+.mini-gain.zero { color: var(--text-muted); }
+
+/* ============================================================
+   Game-over rows (app.js renders .final-score-row)
+   ============================================================ */
+.final-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  font-weight: 700;
+}
+.final-score-row:first-child {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.final-score-row.me { outline: 1px solid color-mix(in srgb, var(--accent-2) 50%, transparent); }
+.final-rank { font-family: var(--font-display); font-weight: 900; margin-right: 0.4rem; }
+.final-pts { color: var(--accent); font-weight: 900; font-variant-numeric: tabular-nums; }
+
+/* Owner chip accent in the waiting room */
+.player-chip.owner { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================
+   Mobile — stack the option grid, keep everything tappable
+   ============================================================ */
+@media (max-width: 640px) {
+  .options-grid { grid-template-columns: 1fr; gap: 0.65rem; }
+  .q-text { font-size: 1.15rem; }
+  .opt-btn { padding: 0.9rem 1rem; }
+}

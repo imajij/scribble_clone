@@ -49,6 +49,7 @@ class TruthLiveGame {
     this.voteDuration = 15;    // seconds
     this.answerTimer = null;
     this.voteTimer = null;
+    this.nextTurnTimer = null;
     this.turnStartTime = null;
 
     // Reconnect
@@ -407,6 +408,7 @@ class TruthLiveGame {
   clearTimers() {
     if (this.answerTimer) { clearTimeout(this.answerTimer); this.answerTimer = null; }
     if (this.voteTimer) { clearTimeout(this.voteTimer); this.voteTimer = null; }
+    if (this.nextTurnTimer) { clearTimeout(this.nextTurnTimer); this.nextTurnTimer = null; }
   }
 }
 

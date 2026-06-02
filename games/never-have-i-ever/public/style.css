@@ -1,0 +1,249 @@
+/* ========================================================================
+   NEVER HAVE I EVER — game-specific styles only.
+   Lobby, waiting room, game-layout, chat, overlays, buttons, inputs, timer
+   and the question card all come from the shared glass system
+   (theme.css + components.css). This file sets the accent identity and styles
+   only the bits unique to this game: the 🙋/🙅 pick buttons, the reveal split,
+   and a few list-row variants app.js renders by hand.
+   ======================================================================== */
+
+:root {
+  --accent: #f472b6;
+  --accent-2: #ec4899;
+  --accent-glow: rgba(244, 114, 182, 0.4);
+
+  /* Per-side colours for the pick buttons + reveal split */
+  --side-have: #ec4899;   /* guilty / "I have" */
+  --side-never: #38bdf8;  /* innocent / "Never" */
+}
+
+/* ============================================================
+   Player sidebar rows (app.js renders .player-item)
+   ============================================================ */
+.player-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+}
+.player-name {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.player-score {
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.player-chip.owner { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================
+   Center stage flow
+   ============================================================ */
+.center-stage { gap: 1rem; }
+.center-stage > #pickingPhase,
+.center-stage > #revealPhase {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* The "Never have I ever..." prompt card */
+.nhie-prefix {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+.nhie-prompt {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  margin-top: 0.25rem;
+}
+
+/* ============================================================
+   🙋 / 🙅 pick buttons (the heart of the game)
+   ============================================================ */
+.pick-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+.pick-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1.6rem 1rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  cursor: pointer;
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(150%);
+  border: 2px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  color: var(--text);
+  transition: transform 0.18s var(--ease), box-shadow 0.2s, border-color 0.2s, background 0.2s;
+}
+.pick-btn:hover:not(:disabled) { transform: translateY(-3px); }
+.pick-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.pick-emoji { font-size: 2.2rem; line-height: 1; }
+.pick-label { font-size: 1.05rem; letter-spacing: 0.02em; }
+
+.pick-have { border-color: color-mix(in srgb, var(--side-have) 60%, transparent); }
+.pick-never { border-color: color-mix(in srgb, var(--side-never) 60%, transparent); }
+.pick-have:hover:not(:disabled),
+.pick-have.selected {
+  background: color-mix(in srgb, var(--side-have) 28%, var(--glass));
+  border-color: var(--side-have);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--side-have) 45%, transparent);
+}
+.pick-never:hover:not(:disabled),
+.pick-never.selected {
+  background: color-mix(in srgb, var(--side-never) 28%, var(--glass));
+  border-color: var(--side-never);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--side-never) 45%, transparent);
+}
+
+.pick-status { color: var(--text-dim); font-size: 0.9rem; text-align: center; font-weight: 700; }
+
+/* ============================================================
+   Reveal split (the payoff)
+   ============================================================ */
+.reveal-card {
+  padding: 1.6rem 1.4rem;
+  border-radius: var(--radius-lg);
+  text-align: center;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
+}
+.reveal-prompt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1.3;
+  margin-bottom: 1.1rem;
+}
+.reveal-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+.reveal-side {
+  padding: 1.1rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--glass);
+  border: 2px solid var(--glass-border);
+  transition: transform 0.35s var(--ease), box-shadow 0.35s;
+}
+.reveal-side-have { border-color: color-mix(in srgb, var(--side-have) 50%, transparent); }
+.reveal-side-never { border-color: color-mix(in srgb, var(--side-never) 50%, transparent); }
+.reveal-side.minority {
+  transform: scale(1.04);
+  box-shadow: 0 0 26px var(--accent-glow);
+}
+.reveal-emoji { font-size: 1.8rem; line-height: 1; }
+.reveal-count {
+  font-family: var(--font-display);
+  font-size: 2.4rem;
+  font-weight: 900;
+  margin-top: 0.1rem;
+}
+.reveal-side-have .reveal-count { color: var(--side-have); }
+.reveal-side-never .reveal-count { color: var(--side-never); }
+.reveal-side-label {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-top: 0.1rem;
+}
+.reveal-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+.reveal-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--glass-soft);
+  border: 1px solid var(--glass-border);
+}
+.reveal-empty { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
+
+.reveal-verdict {
+  margin-top: 1.1rem;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--accent);
+  min-height: 1.3em;
+}
+
+/* ============================================================
+   Game-over leaderboard rows (app.js renders .final-score-row)
+   ============================================================ */
+.final-score-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-soft);
+  font-weight: 700;
+}
+.final-score-row:first-child {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.final-left { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; min-width: 0; }
+.final-rank { font-family: var(--font-display); font-weight: 900; }
+.final-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.final-pts { color: var(--accent); font-weight: 900; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ============================================================
+   Chat row variants app.js renders by hand
+   ============================================================ */
+.chat-msg.system-msg { background: transparent; color: var(--text-muted); font-style: italic; text-align: center; font-size: 0.8rem; }
+.chat-msg .msg-name { font-weight: 800; color: var(--accent); }
+
+/* ============================================================
+   Mobile — stack the grids, keep everything tappable
+   ============================================================ */
+@media (max-width: 640px) {
+  .pick-buttons { grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+  .pick-btn { padding: 1.3rem 0.6rem; }
+  .pick-emoji { font-size: 1.9rem; }
+  .nhie-prompt { font-size: 1.25rem; }
+  .reveal-count { font-size: 2rem; }
+  .final-title { display: none; }
+}

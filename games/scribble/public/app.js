@@ -560,6 +560,17 @@ socket.on('gameOver', ({ scores }) => {
     finalScores.appendChild(row);
   });
 
+  // Gate "Play Again" to the room owner only — non-owners wait for the host
+  if (isOwner) {
+    playAgainBtn.disabled = false;
+    playAgainBtn.textContent = 'Play Again';
+    playAgainBtn.style.display = '';
+  } else {
+    playAgainBtn.disabled = true;
+    playAgainBtn.textContent = 'Waiting for host...';
+    playAgainBtn.style.display = '';
+  }
+
   gameOverOverlay.classList.remove('hidden');
 });
 

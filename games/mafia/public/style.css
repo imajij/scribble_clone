@@ -1,0 +1,213 @@
+/* ========================================================================
+   MAFIA 🕵️ — game-specific styles only.
+   Lobby, waiting room, 3-col game-layout, chat, overlays, buttons, inputs,
+   timer, prompt card and badges all come from the shared glass system
+   (theme.css + components.css). This file sets the accent identity and
+   styles only the bits unique to Mafia: the role card, target-picker action
+   card, phase chip, dead/ghost rows, and the info / resolution banners.
+   ======================================================================== */
+
+:root {
+  --accent: #ef4444;
+  --accent-2: #f59e0b;
+  --accent-glow: rgba(239, 68, 68, 0.4);
+
+  /* Role tints */
+  --c-mafia: #ef4444;
+  --c-detective: #60a5fa;
+  --c-doctor: #34d399;
+  --c-villager: #f59e0b;
+}
+
+/* Lobby rules line under the form */
+.rules-line {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 700;
+  text-align: center;
+  width: 100%;
+}
+
+/* Owner chip accent in the waiting room */
+.player-chip.owner { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================
+   Round-info bar (phase chip + day counter)
+   ============================================================ */
+.round-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.round-info #dayCounter::before { content: 'Day '; font-weight: 700; color: var(--text-muted); }
+.phase-chip {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  letter-spacing: 0.03em;
+}
+.phase-chip.night { background: color-mix(in srgb, #6366f1 26%, transparent); color: #c7d2fe; }
+.phase-chip.day { background: color-mix(in srgb, var(--accent-2) 26%, transparent); color: var(--accent-2); }
+
+/* ============================================================
+   Role card (in players panel)
+   ============================================================ */
+.role-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: var(--radius);
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-highlight);
+}
+.role-card-label {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.role-card-name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.25rem;
+  line-height: 1.1;
+}
+.role-card-desc { font-size: 0.76rem; color: var(--text-dim); line-height: 1.35; }
+
+.role-card.role-mafia { border-color: color-mix(in srgb, var(--c-mafia) 55%, transparent); }
+.role-card.role-mafia .role-card-name { color: var(--c-mafia); }
+.role-card.role-detective { border-color: color-mix(in srgb, var(--c-detective) 55%, transparent); }
+.role-card.role-detective .role-card-name { color: var(--c-detective); }
+.role-card.role-doctor { border-color: color-mix(in srgb, var(--c-doctor) 55%, transparent); }
+.role-card.role-doctor .role-card-name { color: var(--c-doctor); }
+.role-card.role-villager { border-color: color-mix(in srgb, var(--c-villager) 55%, transparent); }
+.role-card.role-villager .role-card-name { color: var(--c-villager); }
+
+/* ============================================================
+   Player rows — alive / dead / me / offline
+   ============================================================ */
+.player-row.me { box-shadow: inset 0 0 0 1px var(--accent); }
+.player-row.dead { opacity: 0.5; }
+.player-row.dead .p-name { text-decoration: line-through; }
+.player-row.offline .p-name { color: var(--text-muted); font-style: italic; }
+.player-row .p-badge { flex: 0 0 auto; font-size: 0.95rem; }
+
+/* ============================================================
+   Center stage
+   ============================================================ */
+.stage-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+.phase-label { letter-spacing: 0.1em; }
+
+/* Announcement / waiting card */
+.announce-icon { font-size: 3rem; line-height: 1; margin-bottom: 0.6rem; filter: drop-shadow(0 4px 14px var(--accent-glow)); }
+.announce-text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  line-height: 1.3;
+}
+.announce-sub { color: var(--text-dim); font-size: 0.92rem; margin-top: 0.5rem; }
+
+/* ============================================================
+   Action card — target picker
+   ============================================================ */
+.target-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.6rem;
+  margin-top: 1.1rem;
+}
+.target-btn {
+  font-family: var(--font-body);
+  font-weight: 800;
+  font-size: 0.95rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius);
+  color: var(--text);
+  background: var(--glass);
+  border: 2px solid var(--glass-border);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  text-align: center;
+  word-break: break-word;
+}
+.target-btn:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--accent); }
+.target-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.target-btn.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 26%, var(--glass));
+  box-shadow: 0 0 22px var(--accent-glow);
+}
+.target-btn.group-pick { border-color: var(--c-mafia); box-shadow: inset 0 0 0 1px var(--c-mafia); }
+.target-btn.abstain { border-style: dashed; }
+.target-btn .vote-count { font-weight: 900; color: var(--accent); }
+
+.action-status {
+  margin-top: 0.9rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   Info / investigation banner
+   ============================================================ */
+.info-banner {
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius);
+  text-align: center;
+  font-size: 1rem;
+  font-weight: 700;
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+}
+.verdict { font-weight: 900; padding: 0.05em 0.5em; border-radius: 999px; }
+.verdict.bad { color: #fff; background: var(--c-mafia); }
+.verdict.good { color: #04231a; background: var(--c-doctor); }
+
+/* ============================================================
+   Chat — label + ghost messages
+   ============================================================ */
+.chat-label {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 0.4rem;
+  border-radius: var(--radius-sm);
+  background: var(--glass-strong);
+  color: var(--text);
+}
+.chat-msg .author { color: var(--accent); }
+.chat-msg.ghost { background: color-mix(in srgb, #818cf8 14%, transparent); }
+.chat-msg.ghost .author { color: #c7d2fe; }
+
+/* ============================================================
+   Game over
+   ============================================================ */
+.game-over-sub { color: var(--text-dim); font-weight: 700; margin-top: -0.4rem; margin-bottom: 0.6rem; }
+.final-scores .score-row .s-score { color: var(--text-dim); font-weight: 800; font-size: 0.9rem; }
+
+/* ============================================================
+   Mobile
+   ============================================================ */
+@media (max-width: 920px) {
+  .role-card { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  .role-card-desc { flex-basis: 100%; }
+}
+@media (max-width: 640px) {
+  .target-list { grid-template-columns: 1fr 1fr; }
+  .announce-icon { font-size: 2.4rem; }
+}

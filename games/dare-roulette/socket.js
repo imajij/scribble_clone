@@ -126,6 +126,9 @@ function register(io) {
 
       // After animation, reveal the dare
       game.revealTimeout = setTimeout(() => {
+        game.revealTimeout = null;
+        if (!rooms.has(roomId)) return;
+        if (game.state !== 'dareReveal' || game.currentPlayer !== result.spinner) return;
         nsp.to(roomId).emit('dareRevealed', {
           spinner: result.spinner,
           spinnerName: result.spinnerName,
@@ -135,6 +138,8 @@ function register(io) {
 
         // Resolve timeout
         game.spinTimer = setTimeout(() => {
+          game.spinTimer = null;
+          if (!rooms.has(roomId)) return;
           if (game.state === 'dareReveal' && game.currentPlayer === result.spinner) {
             autoResolve(nsp, roomId, game);
           }
@@ -163,7 +168,11 @@ function register(io) {
       });
 
       // Next turn after short delay
-      setTimeout(() => advanceTurn(nsp, roomId, game), 3000);
+      game.advanceTimer = setTimeout(() => {
+        game.advanceTimer = null;
+        if (!rooms.has(roomId)) return;
+        advanceTurn(nsp, roomId, game);
+      }, 3000);
     });
 
     // ── Chat ──
@@ -225,7 +234,11 @@ function register(io) {
           scores: skip.scores,
           historyEntry: skip.historyEntry
         });
-        setTimeout(() => advanceTurn(nsp, roomId, game), 2000);
+        game.advanceTimer = setTimeout(() => {
+          game.advanceTimer = null;
+          if (!rooms.has(roomId)) return;
+          advanceTurn(nsp, roomId, game);
+        }, 2000);
       }
 
       broadcastState(nsp, roomId, game);
@@ -321,6 +334,8 @@ function broadcastTurnEvent(nsp, roomId, game, result) {
 
     // Auto-skip if they don't spin in time
     game.spinTimer = setTimeout(() => {
+      game.spinTimer = null;
+      if (!rooms.has(roomId)) return;
       if (game.state === 'spinning' && game.currentPlayer === result.spinner) {
         const skip = game.skipTurn();
         nsp.to(roomId).emit('dareResolved', {
@@ -331,7 +346,11 @@ function broadcastTurnEvent(nsp, roomId, game, result) {
           scores: skip.scores,
           historyEntry: skip.historyEntry
         });
-        setTimeout(() => advanceTurn(nsp, roomId, game), 2000);
+        game.advanceTimer = setTimeout(() => {
+          game.advanceTimer = null;
+          if (!rooms.has(roomId)) return;
+          advanceTurn(nsp, roomId, game);
+        }, 2000);
       }
     }, TURN_TIMEOUT);
   }
@@ -353,7 +372,11 @@ function autoResolve(nsp, roomId, game) {
     scores: skip.scores,
     historyEntry: skip.historyEntry
   });
-  setTimeout(() => advanceTurn(nsp, roomId, game), 2000);
+  game.advanceTimer = setTimeout(() => {
+    game.advanceTimer = null;
+    if (!rooms.has(roomId)) return;
+    advanceTurn(nsp, roomId, game);
+  }, 2000);
 }
 
 module.exports = { register };

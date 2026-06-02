@@ -241,6 +241,16 @@
   socket.on('ownerUpdate', (data) => {
     isOwner = data.owner === mySocketId;
     updateStartBtn();
+    // If ownership changes while the game-over screen is up, re-gate Play Again
+    // so the (new) owner can restart and non-owners stay locked out.
+    if (gameOverOverlay && !gameOverOverlay.classList.contains('hidden')) {
+      const playAgainBtn = $('#playAgainBtn');
+      if (playAgainBtn) {
+        playAgainBtn.disabled = !isOwner;
+        playAgainBtn.classList.toggle('owner-only', !isOwner);
+        playAgainBtn.textContent = isOwner ? 'Play Again' : 'Waiting for owner to restart…';
+      }
+    }
   });
 
   socket.on('playerList', (players) => {
@@ -383,8 +393,12 @@
     ).join('');
     $('#roundEndScores').innerHTML = scoresHtml;
 
-    // Auto-hide after 4.5s
-    setTimeout(() => hide(roundEndOverlay), 4500);
+    // The overlay is normally dismissed by the next server event (newQuestion /
+    // gameOver / gameReset), which all call hide(roundEndOverlay). The server's
+    // next-question delay is 5000ms, so a shorter client auto-hide caused a
+    // flicker. Keep a safety fallback that is >= the server delay in case the
+    // follow-up event is missed.
+    setTimeout(() => hide(roundEndOverlay), 6000);
   });
 
   socket.on('gameOver', (data) => {
@@ -405,6 +419,15 @@
         </div>`;
     }).join('');
     $('#finalScores').innerHTML = html;
+
+    // Only the room owner can restart — the server rejects 'startGame' from
+    // non-owners with an error toast. Gate the button so non-owners can't click.
+    const playAgainBtn = $('#playAgainBtn');
+    if (playAgainBtn) {
+      playAgainBtn.disabled = !isOwner;
+      playAgainBtn.classList.toggle('owner-only', !isOwner);
+      playAgainBtn.textContent = isOwner ? 'Play Again' : 'Waiting for owner to restart…';
+    }
 
     // Clear room session on game over so lobby is clean next time
     currentRoom = null;
